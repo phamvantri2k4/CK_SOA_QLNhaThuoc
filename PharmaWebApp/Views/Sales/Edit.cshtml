@@ -1,0 +1,170 @@
+@model PharmaWebApp.Models.EditSaleViewModel
+@{
+    ViewData["Title"] = "Sửa Hóa đơn";
+    var isPaid = string.Equals(Model?.PaymentStatus, "Paid", StringComparison.OrdinalIgnoreCase);
+}
+
+<div class="container py-4">
+    <h2>Sửa Hóa đơn #@Model.Id</h2>
+
+    @if (isPaid)
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Hóa đơn đã thanh toán nên không thể sửa.
+        </div>
+    }
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <strong>Có lỗi xảy ra!</strong>
+            <ul class="mb-0">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="PaymentStatus" />
+
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Thông tin hóa đơn</h4>
+                <span class="badge @(isPaid ? "bg-success" : "bg-warning")">@Model.PaymentStatus</span>
+            </div>
+
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="CustomerName" class="form-label">Tên khách hàng</label>
+                        <input asp-for="CustomerName" class="form-control" disabled="@(isPaid ? "disabled" : null)" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="CustomerPhone" class="form-label">Số điện thoại</label>
+                        <input asp-for="CustomerPhone" class="form-control" disabled="@(isPaid ? "disabled" : null)" />
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0">Danh sách sản phẩm</h5>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="addRowBtn" disabled="@(isPaid ? "disabled" : null)">
+                        <i class="bi bi-plus"></i> Thêm dòng
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle" id="itemsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 140px;">DrugId</th>
+                                <th style="width: 140px;">Đơn vị</th>
+                                <th style="width: 160px;">Số lượng</th>
+                                <th style="width: 90px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var i = 0; i < Model.Items.Count; i++)
+                            {
+                                <tr>
+                                    <td>
+                                        <input name="Items[@i].DrugId" value="@Model.Items[i].DrugId" class="form-control" type="number" min="1" disabled="@(isPaid ? "disabled" : null)" />
+                                    </td>
+                                    <td>
+                                        <select name="Items[@i].UnitType" class="form-select" disabled="@(isPaid ? "disabled" : null)">
+                                            <option value="pill" selected="@(string.Equals(Model.Items[i].UnitType, "pill", StringComparison.OrdinalIgnoreCase))">Viên</option>
+                                            <option value="box" selected="@(string.Equals(Model.Items[i].UnitType, "box", StringComparison.OrdinalIgnoreCase))">Hộp</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input name="Items[@i].Quantity" value="@Model.Items[i].Quantity" class="form-control" type="number" min="1" disabled="@(isPaid ? "disabled" : null)" />
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-outline-danger btn-sm removeRowBtn" disabled="@(isPaid ? "disabled" : null)">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card-footer d-flex justify-content-between align-items-center">
+                <div>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Quay lại
+                    </a>
+                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-info">
+                        <i class="bi bi-eye"></i> Xem chi tiết
+                    </a>
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-warning" disabled="@(isPaid ? "disabled" : null)">
+                        <i class="bi bi-save"></i> Lưu thay đổi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+    (function () {
+        const table = document.getElementById('itemsTable');
+        const addBtn = document.getElementById('addRowBtn');
+        if (!table || !addBtn) return;
+
+        function reindex() {
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach((row, idx) => {
+                const drug = row.querySelector('input[name$=".DrugId"]') || row.querySelector('input[name*="DrugId"]');
+                const unit = row.querySelector('select[name*="UnitType"]');
+                const qty = row.querySelector('input[name*="Quantity"]');
+                if (drug) drug.name = `Items[${idx}].DrugId`;
+                if (unit) unit.name = `Items[${idx}].UnitType`;
+                if (qty) qty.name = `Items[${idx}].Quantity`;
+            });
+        }
+
+        addBtn.addEventListener('click', () => {
+            const tbody = table.querySelector('tbody');
+            const idx = tbody.querySelectorAll('tr').length;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input name="Items[${idx}].DrugId" class="form-control" type="number" min="1" value="0" /></td>
+                <td>
+                    <select name="Items[${idx}].UnitType" class="form-select">
+                        <option value="pill" selected>Viên</option>
+                        <option value="box">Hộp</option>
+                    </select>
+                </td>
+                <td><input name="Items[${idx}].Quantity" class="form-control" type="number" min="1" value="1" /></td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm removeRowBtn"><i class="bi bi-x"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        table.addEventListener('click', (e) => {
+            const btn = e.target.closest('.removeRowBtn');
+            if (!btn) return;
+            const row = btn.closest('tr');
+            if (!row) return;
+            row.remove();
+            reindex();
+        });
+    })();
+</script>
+}
+

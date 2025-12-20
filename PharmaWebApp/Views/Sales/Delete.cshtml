@@ -1,0 +1,89 @@
+@model PharmaWebApp.Models.SaleInvoiceDisplayViewModel
+@{
+    ViewData["Title"] = "Xóa Hóa đơn";
+}
+
+<div class="container py-4">
+    <h2>Xóa Hóa đơn</h2>
+
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Cảnh báo:</strong> Bạn có chắc chắn muốn xóa hóa đơn này? Hành động này không thể hoàn tác.
+    </div>
+
+    @if (Model != null)
+    {
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">Hóa đơn #@Model.Id</h4>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Ngày tạo:</dt>
+                    <dd class="col-sm-9">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")</dd>
+
+                    <dt class="col-sm-3">Khách hàng:</dt>
+                    <dd class="col-sm-9">@Model.CustomerName</dd>
+
+                    <dt class="col-sm-3">Nhân viên:</dt>
+                    <dd class="col-sm-9">
+                        <strong>NV-@Model.StaffId</strong>
+                        @if (!string.IsNullOrEmpty(Model.StaffName))
+                        {
+                            <span class="text-muted"> - @Model.StaffName</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-3">Trạng thái:</dt>
+                    <dd class="col-sm-9">
+                        @if (Model.PaymentStatus == "Paid")
+                        {
+                            <span class="badge bg-success">Đã thanh toán</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning">Chờ thanh toán</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-3">Số mặt hàng:</dt>
+                    <dd class="col-sm-9">@Model.Items.Count</dd>
+
+                    <dt class="col-sm-3">Tổng tiền:</dt>
+                    <dd class="col-sm-9"><strong class="text-success">@Model.TotalAmount.ToString("N0") VNĐ</strong></dd>
+                </dl>
+            </div>
+        </div>
+
+        <form asp-action="Delete" method="post" class="mt-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-danger" onclick="return confirmDelete()">
+                    <i class="bi bi-trash"></i> Xác nhận xóa
+                </button>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Quay lại
+                </a>
+            </div>
+        </form>
+    }
+    else
+    {
+        <div class="alert alert-danger">
+            Không tìm thấy hóa đơn.
+        </div>
+        <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+    }
+</div>
+
+<script>
+    function confirmDelete() {
+        showConfirm('Xác nhận xóa', 'Bạn có chắc chắn muốn xóa hóa đơn này? Hành động này không thể hoàn tác.', () => {
+            document.querySelector('form').submit();
+        });
+        return false;
+    }
+</script>
+

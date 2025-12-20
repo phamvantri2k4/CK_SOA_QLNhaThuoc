@@ -1,0 +1,143 @@
+@model PharmaWebApp.Models.PagedList<PharmaWebApp.Models.SaleInvoiceDisplayViewModel>
+@{
+    ViewData["Title"] = "Danh sách Hóa đơn";
+}
+
+<div class="container py-4">
+    <h2>Danh sách Hóa đơn bán hàng</h2>
+    <p class="text-muted">Dữ liệu được lấy từ SaleService API</p>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger">
+            <strong>Lỗi:</strong> @ViewBag.ErrorMessage
+        </div>
+    }
+
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+        <div>
+            <a asp-action="Create" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Lập hóa đơn mới
+            </a>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-house"></i> Về trang chủ
+            </a>
+        </div>
+        <div>
+            <form method="get" class="d-inline-flex align-items-center gap-2">
+                <label for="staffId" class="form-label mb-0">Lọc theo nhân viên:</label>
+                <select name="staffId" id="staffId" class="form-select" style="width: auto;" onchange="this.form.submit()">
+                    <option value="">Tất cả nhân viên</option>
+                    @if (ViewBag.StaffList != null)
+                    {
+                        @foreach (var staff in (List<PharmaWebApp.Controllers.StaffViewModel>)ViewBag.StaffList)
+                        {
+                            <option value="@staff.Id" selected="@(ViewBag.SelectedStaffId != null && ViewBag.SelectedStaffId.ToString() == staff.Id.ToString())">
+                                NV-@staff.Id - @staff.FullName (@staff.Role)
+                            </option>
+                        }
+                    }
+                </select>
+                @if (ViewBag.SelectedStaffId != null)
+                {
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-x-circle"></i> Xóa bộ lọc
+                    </a>
+                }
+            </form>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Items.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Mã HĐ</th>
+                        <th>Ngày tạo</th>
+                        <th>Tên khách hàng</th>
+                        <th>Nhân viên</th>
+                        <th>Trạng thái</th>
+                        <th>Số mặt hàng</th>
+                        <th>Tổng tiền</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var invoice in Model.Items)
+                    {
+                        <tr>
+                            <td><strong>#@invoice.Id</strong></td>
+                            <td>@invoice.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@invoice.CustomerName</td>
+                            <td>
+                                <strong>NV-@invoice.StaffId</strong>
+                                @if (!string.IsNullOrEmpty(invoice.StaffName))
+                                {
+                                    <br /><small class="text-muted">@invoice.StaffName</small>
+                                }
+                            </td>
+                            <td>
+                                @if (invoice.PaymentStatus == "Paid")
+                                {
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle"></i> Đã thanh toán
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning">
+                                        <i class="bi bi-clock"></i> Chờ thanh toán
+                                    </span>
+                                }
+                            </td>
+                            <td>@invoice.Items.Count</td>
+                            <td><strong class="text-success">@invoice.TotalAmount.ToString("N0") VNĐ</strong></td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@invoice.Id" class="btn btn-sm btn-info">
+                                    <i class="bi bi-eye"></i> Chi tiết
+                                </a>
+                                @if (User.IsInRole("Owner"))
+                                {
+                                    <a asp-action="Edit" asp-route-id="@invoice.Id" class="btn btn-sm btn-warning">
+                                        <i class="bi bi-pencil"></i> Sửa
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@invoice.Id" class="btn btn-sm btn-danger">
+                                        <i class="bi bi-trash"></i> Xóa
+                                    </a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+        @* Phân trang *@
+        @await Html.PartialAsync("_Pagination", Model)
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <p class="mb-0">Chưa có hóa đơn nào trong hệ thống.</p>
+        </div>
+    }
+</div>
+

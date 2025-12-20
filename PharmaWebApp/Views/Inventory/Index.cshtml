@@ -1,0 +1,171 @@
+@model List<PharmaWebApp.Models.InventoryItemViewModel>
+@{
+    ViewData["Title"] = "Kho";
+    var warnings = ViewBag.ExpiryWarnings as List<PharmaWebApp.Models.InventoryItemViewModel> ?? new List<PharmaWebApp.Models.InventoryItemViewModel>();
+    var lowStock = ViewBag.LowStockWarnings as List<PharmaWebApp.Models.InventoryLowStockWarningViewModel> ?? new List<PharmaWebApp.Models.InventoryLowStockWarningViewModel>();
+    var lowStockThreshold = ViewBag.LowStockThreshold as int? ?? 20;
+}
+
+<div class="py-2">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <div class="app-page-title"><i class="bi bi-box-seam"></i> Quản lý kho</div>
+            <div class="text-muted">Theo dõi tồn kho, cảnh báo sắp hết và sắp hết hạn</div>
+        </div>
+    </div>
+
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+    }
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <strong>Tồn kho hiện tại</strong>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Thuốc</th>
+                                    <th>Số lượng (lô)</th>
+                                    <th>Hạn dùng</th>
+                                    <th>Giá nhập</th>
+                                    <th>Giá bán (viên)</th>
+                                    <th>Giá bán (hộp)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                        @if (Model.Count == 0)
+                        {
+                            <tr><td colspan="6" class="text-center text-muted py-3">Chưa có dữ liệu tồn kho</td></tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model)
+                            {
+                                var pack = item.PackSize <= 0 ? 1 : item.PackSize;
+                                var boxQty = pack > 0 ? (item.Quantity / pack) : 0;
+                                var pillRemain = pack > 0 ? (item.Quantity % pack) : item.Quantity;
+
+                                <tr>
+                                    <td>
+                                        <div><strong>@(item.DrugName ?? $"#{item.DrugId}")</strong></div>
+                                        <div class="text-muted small">ID: @item.DrugId</div>
+                                    </td>
+                                    <td>
+                                        <div><strong>@item.Quantity</strong> viên</div>
+                                        <div class="text-muted small">@boxQty hộp + @pillRemain viên (1 hộp = @pack viên)</div>
+                                    </td>
+                                    <td>@(item.ExpiryDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                    <td>
+                                        <div>@(item.ImportPrice != null ? $"{item.ImportPrice.Value:N0} ₫" : "-")</div>
+                                        @if (!string.IsNullOrWhiteSpace(item.ImportSupplierName) || item.ImportCreatedAt != null)
+                                        {
+                                            <div class="text-muted small">
+                                                @(string.IsNullOrWhiteSpace(item.ImportSupplierName) ? "" : item.ImportSupplierName)
+                                                @(item.ImportCreatedAt != null ? $" - {item.ImportCreatedAt.Value:dd/MM/yyyy}" : "")
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>@(item.SellPrice?.ToString("N0") ?? "-")</td>
+                                    <td>@(item.BoxPrice?.ToString("N0") ?? "-")</td>
+                                </tr>
+                            }
+                        }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <strong>Thuốc sắp hết (<= @lowStockThreshold)</strong>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Thuốc</th>
+                                    <th>Tồn</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                        @if (lowStock.Count == 0)
+                        {
+                            <tr><td colspan="2" class="text-center text-muted py-3">Không có cảnh báo</td></tr>
+                        }
+                        else
+                        {
+                            foreach (var w in lowStock)
+                            {
+                                var pack = w.PackSize <= 0 ? 1 : w.PackSize;
+                                var boxQty = pack > 0 ? (w.TotalQuantity / pack) : 0;
+                                var pillRemain = pack > 0 ? (w.TotalQuantity % pack) : w.TotalQuantity;
+
+                                <tr>
+                                    <td>
+                                        <div><strong>@(w.DrugName ?? $"#{w.DrugId}")</strong></div>
+                                        <div class="text-muted small">ID: @w.DrugId</div>
+                                    </td>
+                                    <td>
+                                        <div><strong>@w.TotalQuantity</strong> viên</div>
+                                        <div class="text-muted small">@boxQty hộp + @pillRemain viên</div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <strong>Thuốc sắp hết hạn (<= 30 ngày)</strong>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Thuốc</th>
+                                    <th>Hạn dùng</th>
+                                    <th>SL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                        @if (warnings.Count == 0)
+                        {
+                            <tr><td colspan="3" class="text-center text-muted py-3">Không có cảnh báo</td></tr>
+                        }
+                        else
+                        {
+                            foreach (var w in warnings)
+                            {
+                                <tr>
+                                    <td>
+                                        <div><strong>@(w.DrugName ?? $"#{w.DrugId}")</strong></div>
+                                        <div class="text-muted small">ID: @w.DrugId</div>
+                                    </td>
+                                    <td>@(w.ExpiryDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                    <td>@w.Quantity</td>
+                                </tr>
+                            }
+                        }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

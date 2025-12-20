@@ -1,0 +1,109 @@
+@{
+    ViewData["Title"] = "Lập hóa đơn mới";
+    var drugs = ViewBag.Drugs as List<PharmaWebApp.Models.DrugViewModel>;
+}
+
+<div class="container py-4">
+    <h2>Lập hóa đơn bán hàng</h2>
+    <p class="text-muted">Nhập thông tin hóa đơn để gửi đến SaleService</p>
+
+    <div class="row">
+        <div class="col-md-8">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        <strong>Có lỗi xảy ra!</strong>
+                        <ul class="mb-0">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <li>@error.ErrorMessage</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Thông tin hóa đơn</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="customerName" class="form-label">Tên khách hàng</label>
+                            <input name="customerName" class="form-control" placeholder="Nhập tên khách hàng (hoặc để trống)" />
+                            <small class="text-muted">Để trống nếu khách vãng lai</small>
+                        </div>
+
+                        <hr>
+
+                        <h6>Chọn thuốc</h6>
+
+                        @if (drugs != null && drugs.Any())
+                        {
+                            <div class="mb-3">
+                                <label for="drugId" class="form-label">Thuốc <span class="text-danger">*</span></label>
+                                <select name="drugId" class="form-select" required>
+                                    <option value="">-- Chọn thuốc --</option>
+                                    @foreach (var drug in drugs)
+                                    {
+                                        <option value="@drug.Id">
+                                            @drug.Name (@drug.Code) - @drug.SellPrice.ToString("N0") VNĐ/@drug.Unit
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="quantity" class="form-label">Số lượng <span class="text-danger">*</span></label>
+                                <input name="quantity" type="number" min="1" value="1" class="form-control" required />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                Không thể tải danh sách thuốc. Vui lòng kiểm tra DrugService.
+                            </div>
+                        }
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-success" @(drugs == null || !drugs.Any() ? "disabled" : "")>
+                                <i class="bi bi-check-circle"></i> Tạo hóa đơn
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Hủy
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">Lưu ý</h5>
+                    <p class="card-text small">
+                        - Hóa đơn này là demo đơn giản với 1 loại thuốc<br>
+                        - SaleService sẽ gọi sang DrugService để lấy giá thuốc tự động<br>
+                        - Tổng tiền được tính tự động
+                    </p>
+                    
+                    <h6 class="mt-3">Luồng xử lý SOA:</h6>
+                    <p class="card-text small">
+                        1. PharmaWebApp gọi SaleService<br>
+                        2. SaleService gọi DrugService lấy giá<br>
+                        3. SaleService tính tổng và lưu hóa đơn<br>
+                        4. Trả kết quả về PharmaWebApp
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+

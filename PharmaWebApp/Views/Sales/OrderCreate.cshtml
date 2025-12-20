@@ -1,0 +1,1006 @@
+@{ 
+    ViewData["Title"] = "Lập hóa đơn";
+    var drugs = ViewBag.Drugs as List<PharmaWebApp.Models.DrugViewModel>;
+    var stockByDrugId = ViewBag.StockByDrugId as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var categories = ViewBag.Categories as List<string> ?? new List<string>();
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+    body {
+        background: #f8f9fa;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+    }
+    
+    /* Container danh sách thuốc - không shift nữa để overlay */
+    .drugs-container {
+        transition: none;
+        margin-right: 0;
+    }
+    
+    .drug-card {
+        transition: box-shadow 0.2s ease;
+        height: 100%;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        position: relative;
+        z-index: 1;
+    }
+
+    .drug-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border-color: #28a745;
+    }
+
+    .drug-image {
+        width: 100%;
+        height: 160px;
+        object-fit: cover;
+        background: #f8f9fa;
+    }
+
+    .price-tag {
+        background: #f8f9fa;
+        color: #212529;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-weight: 600;
+        display: inline-block;
+        font-size: 12px;
+        border: 1px solid #dee2e6;
+    }
+
+    .price-tag.secondary {
+        background: #ffffff;
+        color: #212529;
+        border: 1px solid #dee2e6;
+    }
+    
+    /* Nút thêm vào giỏ */
+    .add-to-cart-btn {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        width: 40px;
+        height: 40px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        z-index: 10;
+    }
+
+    .add-to-cart-btn:hover {
+        background: #218838;
+    }
+    
+    .cart-sidebar {
+        position: fixed;
+        right: -300px;
+        top: 0;
+        width: 300px;
+        height: 100vh;
+        background: white;
+        box-shadow: -4px 0 12px rgba(0,0,0,0.1);
+        transition: right 0.3s ease;
+        z-index: 1000;
+        overflow-y: auto;
+        border-left: 3px solid #28a745;
+    }
+
+    .cart-sidebar.active {
+        right: 0;
+    }
+
+    .cart-header {
+        background: #28a745;
+        color: white;
+        padding: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 1001;
+    }
+
+    .customer-info-section {
+        background: #f8f9fa;
+        padding: 16px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .cart-item {
+        border-bottom: 1px solid #dee2e6;
+        padding: 12px 16px;
+    }
+
+    .quantity-control {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: #f8f9fa;
+        padding: 4px;
+        border-radius: 6px;
+    }
+
+    .quantity-btn {
+        width: 28px;
+        height: 28px;
+        border: none;
+        background: white;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        color: #28a745;
+        transition: background 0.2s ease;
+    }
+
+    .quantity-btn:hover {
+        background: #28a745;
+        color: white;
+    }
+
+    .cart-badge {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background: #28a745;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+        z-index: 998;
+        transition: background 0.2s ease;
+    }
+
+    .cart-badge:hover {
+            background: #218838;
+    }
+
+    .cart-count {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        background: #dc3545;
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: bold;
+        border: 2px solid white;
+    }
+
+    .cart-total {
+        padding: 16px;
+        background: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .form-control:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+
+    .header-section {
+        background: #28a745;
+        color: white;
+        padding: 16px 0;
+        margin-bottom: 20px;
+        border-radius: 0 0 8px 8px;
+    }
+
+    .filter-bar {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        padding: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        position: sticky;
+        top: 72px;
+        z-index: 50;
+    }
+
+    .filter-input {
+        border-radius: 8px;
+    }
+
+    .filter-bar .form-control,
+    .filter-bar .form-select,
+    .filter-bar .input-group-text,
+    .filter-bar .btn {
+        font-size: 0.9rem;
+    }
+
+    .filter-bar .input-group-text {
+        border-radius: 8px 0 0 8px;
+    }
+
+    .filter-bar .btn {
+        border-radius: 8px;
+    }
+
+    .btn-success {
+        background: #28a745;
+        border: none;
+        border-radius: 6px;
+        padding: 10px;
+        font-weight: 500;
+    }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+    .btn-outline-primary {
+        border-color: #28a745;
+        color: #28a745;
+        border-radius: 6px;
+        padding: 8px 16px;
+    }
+
+        .btn-outline-primary:hover {
+            background: #28a745;
+            color: white;
+    }
+</style>
+
+<div class="drugs-container" id="drugsContainer">
+    <div class="header-section text-center">
+        <div class="container">
+            <h1 class="mb-2">
+                <i class="bi bi-pills me-2"></i> Pharmacity
+            </h1>
+            <p class="mb-0">Chọn thuốc nhanh chóng - Tư vấn miễn phí</p>
+        </div>
+    </div>
+
+    <div class="container-fluid py-3">
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1 text-success">
+                            <i class="bi bi-shop-window me-2"></i> Danh sách thuốc
+                        </h2>
+                        <p class="text-muted mb-0 small">Click nút + để thêm vào giỏ hàng</p>
+                    </div>
+                    <div>
+                        <a asp-controller="Drugs" asp-action="Index" class="btn btn-outline-primary">
+                            <i class="bi bi-list-ul me-1"></i> Danh sách đầy đủ
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="filter-bar">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-lg-5">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                                <input id="drugSearchInput" class="form-control filter-input" placeholder="Tìm theo tên, mã thuốc..." />
+                                <button class="btn btn-outline-secondary" type="button" id="clearDrugSearchBtn" title="Xóa">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-lg-3">
+                            <select id="categoryFilter" class="form-select filter-input">
+                                <option value="">Tất cả danh mục</option>
+                                @foreach (var c in categories)
+                                {
+                                    <option value="@c">@c</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-lg-2">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" role="switch" id="inStockSwitch">
+                                <label class="form-check-label" for="inStockSwitch">Còn hàng</label>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 d-flex justify-content-lg-end align-items-center gap-2">
+                            <button class="btn btn-outline-secondary" type="button" id="resetFiltersBtn" title="Reset">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </button>
+                            <span class="small text-muted" id="drugFilterCount"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (ViewBag.ErrorMessage != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i> @ViewBag.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (drugs != null && drugs.Any())
+        {
+            <div class="row g-3" id="drugGrid">
+                @foreach (var drug in drugs)
+                {
+                    var stockForCard = stockByDrugId.TryGetValue(drug.Id, out var sCard) ? sCard : 0;
+                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 drug-col"
+                         data-drug-id="@drug.Id"
+                         data-name="@drug.Name"
+                         data-code="@drug.Code"
+                         data-category="@drug.Category"
+                         data-instock="@(stockForCard > 0 ? "1" : "0")">
+                        <div class="card drug-card h-100">
+                            <div class="position-relative">
+                                <img src="@(string.IsNullOrEmpty(drug.ImageUrl) ? "/images/no-image.png" : drug.ImageUrl)" 
+                                     class="card-img-top drug-image" 
+                                     alt="@drug.Name"
+                                     onerror="this.src='/images/no-image.png'">
+                                
+                                <button class="add-to-cart-btn" 
+                                        onclick="addSelectedToCart(@drug.Id)"
+                                        @(stockForCard <= 0 ? "disabled=\"disabled\"" : "")
+                                        style="@(stockForCard <= 0 ? "background:#adb5bd;cursor:not-allowed;" : "")"
+                                        title="Thêm vào giỏ hàng">
+                                    <i class="bi bi-plus"></i>
+                                </button>
+                            </div>
+                            <div class="card-body text-center p-2">
+                                <h6 class="card-title mb-1 fw-bold small">@drug.Name</h6>
+                                <p class="card-text text-muted mb-1 small">
+                                    <i class="bi bi-upc-scan me-1"></i> @drug.Code
+                                </p>
+                                <p class="card-text mb-2 small">
+                                    <span class="badge bg-light text-dark">@drug.Category</span>
+                                </p>
+                                <div class="d-flex flex-column align-items-center gap-1">
+                                    @if (drug.SellPrice > 0)
+                                    {
+                                        <span class="price-tag">Lẻ: @drug.SellPrice.ToString("N0") đ / @drug.Unit</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted" style="font-size: 11px;">Không bán lẻ</span>
+                                    }
+
+                                    @if (drug.BoxPrice > 0)
+                                    {
+                                        <span class="price-tag secondary">Hộp: @drug.BoxPrice.ToString("N0") đ / hộp (@drug.PackSize @drug.Unit)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted" style="font-size: 11px;">Không bán theo hộp</span>
+                                    }
+                                </div>
+
+                                @{
+                                    var stock = stockByDrugId.TryGetValue(drug.Id, out var s) ? s : 0;
+                                    var pack = drug.PackSize <= 0 ? 1 : drug.PackSize;
+                                    var boxQty = pack > 0 ? (stock / pack) : 0;
+                                    var pillRemain = pack > 0 ? (stock % pack) : stock;
+                                }
+                                <div class="mt-1" style="font-size: 11px;">
+                                    @if (stock > 0)
+                                    {
+                                        <span class="text-success">Tồn: @stock viên</span>
+                                        <span class="text-muted">(@boxQty hộp + @pillRemain viên)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger fw-bold">Hết hàng</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info text-center py-4">
+                <i class="bi bi-inbox" style="font-size: 48px; color: #adb5bd;"></i>
+                <h5 class="mt-2 mb-0 text-muted">Không có thuốc nào trong hệ thống.</h5>
+                <p class="text-muted small">Liên hệ quản trị viên để cập nhật.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Badge giỏ hàng -->
+<div class="cart-badge" onclick="toggleCart()">
+    <i class="bi bi-cart3"></i>
+    <span class="cart-count" id="cartCount">0</span>
+</div>
+
+<!-- Sidebar giỏ hàng -->
+<div class="cart-sidebar" id="cartSidebar">
+    <div class="cart-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">
+                    <i class="bi bi-cart-check me-2"></i> Giỏ hàng
+                </h5>
+                <small>Đơn hàng của bạn</small>
+            </div>
+            <button class="btn-close btn-close-white" onclick="closeCart()"></button>
+        </div>
+    </div>
+
+    <div class="p-0">
+        <!-- Thông tin khách hàng -->
+        <div class="customer-info-section">
+            <h6 class="mb-3 text-success">
+                <i class="bi bi-person-circle me-2"></i> Thông tin khách hàng
+            </h6>
+            
+            <div class="mb-2">
+                <label class="form-label small fw-bold">Tên khách hàng <span class="text-danger">*</span></label>
+                <input type="text" id="customerName" class="form-control form-control-sm" placeholder="Nhập tên khách hàng" required>
+            </div>
+
+            <div class="mb-0">
+                <label class="form-label small fw-bold">Số điện thoại <span class="text-danger">*</span></label>
+                <input type="tel" id="customerPhone" class="form-control form-control-sm" placeholder="0123456789" required>
+            </div>
+
+        </div>
+
+        <!-- Danh sách sản phẩm -->
+        <div class="p-3">
+            <h6 class="mb-2">
+                <i class="bi bi-bag-check me-2 text-success"></i> Sản phẩm đã chọn
+                <span class="badge bg-success ms-1" id="totalItemsBadge">0</span>
+        </h6>
+        <div id="cartItems"></div>
+        </div>
+
+        <!-- Tổng tiền -->
+        <div class="cart-total">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <small class="text-muted">Tổng cộng</small>
+                    <h4 class="mb-0 text-success fw-bold small" id="totalAmount">0 đ</h4>
+                </div>
+                <div class="text-end">
+                    <small class="text-muted">Số lượng</small>
+                    <h5 class="mb-0 small" id="totalItems">0 SP</h5>
+                </div>
+            </div>
+            
+            <button class="btn btn-success w-100 mb-2" onclick="submitOrder()">
+                <i class="bi bi-receipt-cutoff me-2"></i> Tạo đơn hàng
+            </button>
+            <button class="btn btn-outline-danger w-100" onclick="clearCart()">
+                <i class="bi bi-trash me-2"></i> Xóa giỏ hàng
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let cart = [];
+
+    const filterState = {
+        q: '',
+        category: '',
+        inStockOnly: false
+    };
+
+    const availableDrugs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        (drugs ?? new List<PharmaWebApp.Models.DrugViewModel>()).Select(d => new {
+            id = d.Id,
+            name = d.Name,
+            sellPrice = d.SellPrice,
+            boxPrice = d.BoxPrice,
+            imageUrl = d.ImageUrl,
+            packSize = d.PackSize,
+            stock = stockByDrugId.TryGetValue(d.Id, out var s) ? s : 0
+        })
+    ));
+
+    function normalizeText(s) {
+        return (s || '').toString().trim().toLowerCase();
+    }
+
+    function applyDrugFilters() {
+        const cols = document.querySelectorAll('.drug-col');
+        if (!cols || cols.length === 0) return;
+
+        const q = normalizeText(filterState.q);
+        const category = (filterState.category || '').trim();
+        const inStockOnly = !!filterState.inStockOnly;
+
+        let visibleCount = 0;
+        cols.forEach(col => {
+            const name = normalizeText(col.getAttribute('data-name'));
+            const code = normalizeText(col.getAttribute('data-code'));
+            const cat = (col.getAttribute('data-category') || '').trim();
+            const inStock = (col.getAttribute('data-instock') || '0') === '1';
+
+            const matchText = !q || name.includes(q) || code.includes(q);
+            const matchCat = !category || cat === category;
+            const matchStock = !inStockOnly || inStock;
+
+            const show = matchText && matchCat && matchStock;
+            col.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+
+        const countEl = document.getElementById('drugFilterCount');
+        if (countEl) {
+            countEl.textContent = `Hiển thị ${visibleCount} / ${cols.length}`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('drugSearchInput');
+        const clearBtn = document.getElementById('clearDrugSearchBtn');
+        const categorySelect = document.getElementById('categoryFilter');
+        const resetBtn = document.getElementById('resetFiltersBtn');
+        const inStockSwitch = document.getElementById('inStockSwitch');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                filterState.q = searchInput.value || '';
+                applyDrugFilters();
+            });
+        }
+
+        if (clearBtn && searchInput) {
+            clearBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                filterState.q = '';
+                applyDrugFilters();
+                searchInput.focus();
+            });
+        }
+
+        if (categorySelect) {
+            categorySelect.addEventListener('change', () => {
+                filterState.category = categorySelect.value || '';
+                applyDrugFilters();
+            });
+        }
+
+        if (resetBtn && searchInput && categorySelect) {
+            resetBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                categorySelect.value = '';
+                filterState.q = '';
+                filterState.category = '';
+                if (inStockSwitch) inStockSwitch.checked = false;
+                filterState.inStockOnly = false;
+                applyDrugFilters();
+            });
+        }
+
+        if (inStockSwitch) {
+            inStockSwitch.addEventListener('change', () => {
+                filterState.inStockOnly = !!inStockSwitch.checked;
+                applyDrugFilters();
+            });
+        }
+
+        // initial
+        if (inStockSwitch) inStockSwitch.checked = false;
+        filterState.inStockOnly = false;
+        applyDrugFilters();
+    });
+
+    function getStockPills(drugId) {
+        const drug = availableDrugs.find(d => d.id === drugId);
+        return parseInt(drug?.stock || 0);
+    }
+
+    function getCartReservedPills(drugId) {
+        return cart
+            .filter(i => i.drugId === drugId)
+            .reduce((sum, i) => {
+                const pack = parseInt(i.packSize || 1);
+                const qty = parseInt(i.quantity || 0);
+                const factor = (i.unitType === 'box') ? pack : 1;
+                return sum + (qty * factor);
+            }, 0);
+    }
+
+    function canAddToCart(drugId, unitType, quantity, exceptKey = null) {
+        const drug = availableDrugs.find(d => d.id === drugId);
+        if (!drug) return false;
+        const pack = parseInt(drug.packSize || 1) > 0 ? parseInt(drug.packSize || 1) : 1;
+        const stock = parseInt(drug.stock || 0);
+
+        const reserved = cart
+            .filter(i => i.drugId === drugId && (!exceptKey || i.key !== exceptKey))
+            .reduce((sum, i) => {
+                const p = parseInt(i.packSize || 1);
+                const q = parseInt(i.quantity || 0);
+                const factor = (i.unitType === 'box') ? p : 1;
+                return sum + (q * factor);
+            }, 0);
+
+        const q = parseInt(quantity || 0);
+        if (q <= 0) return false;
+        const needed = (unitType === 'box') ? (q * pack) : q;
+        return (reserved + needed) <= stock;
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    function getUnitLabel(unitType) {
+        return unitType === 'box' ? 'Hộp' : 'Viên';
+    }
+
+    function getDefaultUnitType(drug) {
+        const hasPill = parseFloat(drug?.sellPrice || 0) > 0;
+        const hasBox = parseFloat(drug?.boxPrice || 0) > 0;
+
+        if (hasBox) return 'box';
+        if (hasPill) return 'pill';
+        return 'pill';
+    }
+
+    function getUnitPrice(drug, unitType) {
+        if (unitType === 'box') {
+            return parseFloat(drug?.boxPrice || 0);
+        }
+        return parseFloat(drug?.sellPrice || 0);
+    }
+
+    function addSelectedToCart(drugId) {
+        event.stopPropagation();
+        const drug = availableDrugs.find(d => d.id === drugId);
+        if (!drug) return;
+
+        const stock = parseInt(drug.stock || 0);
+        if (stock <= 0) {
+            showNotification('Cảnh báo', `Sản phẩm '${drug.name}' đã hết hàng.`, 'warning');
+            return;
+        }
+
+        const unitType = getDefaultUnitType(drug);
+        addToCart(drug, unitType, 1);
+    }
+
+    function addToCart(drug, unitType, quantity) {
+        const sidebar = document.getElementById('cartSidebar');
+        const isCartOpen = sidebar.classList.contains('active');
+
+        const qty = parseInt(quantity || 0);
+        if (qty <= 0) return;
+
+        const key = `${drug.id}_${unitType}`;
+        const existingItem = cart.find(i => i.key === key);
+
+        if (!canAddToCart(drug.id, unitType, qty)) {
+            const available = getStockPills(drug.id) - getCartReservedPills(drug.id);
+            showNotification('Cảnh báo', `Không đủ tồn kho cho '${drug.name}'. Còn ${available} viên khả dụng.`, 'warning');
+            return;
+        }
+
+        const unitPrice = getUnitPrice(drug, unitType);
+        if (unitPrice <= 0) {
+            showNotification('Cảnh báo', `Thuốc '${drug.name}' chưa có giá cho dạng '${getUnitLabel(unitType)}'.`, 'warning');
+            return;
+        }
+
+        if (existingItem) {
+            existingItem.quantity += qty;
+        } else {
+            cart.push({
+                key: key,
+                drugId: drug.id,
+                name: drug.name,
+                unitType: unitType,
+                unitLabel: getUnitLabel(unitType),
+                unitPrice: unitPrice,
+                sellPrice: parseFloat(drug.sellPrice || 0),
+                boxPrice: parseFloat(drug.boxPrice || 0),
+                packSize: parseInt(drug.packSize || 1),
+                imageUrl: drug.imageUrl,
+                quantity: qty
+            });
+        }
+
+        updateCart();
+
+        if (!isCartOpen) {
+            sidebar.classList.add('active');
+        }
+    }
+
+    function updateUnitType(key, newUnitType) {
+        event.stopPropagation();
+        const item = cart.find(i => i.key === key);
+        if (!item) return;
+
+        const unitType = (newUnitType || 'pill').trim().toLowerCase();
+        if (unitType !== 'pill' && unitType !== 'box') return;
+
+        const unitPrice = unitType === 'box' ? parseFloat(item.boxPrice || 0) : parseFloat(item.sellPrice || 0);
+        if (unitPrice <= 0) {
+            showNotification('Cảnh báo', `Sản phẩm '${item.name}' không có giá cho dạng '${getUnitLabel(unitType)}'.`, 'warning');
+            updateCart();
+            return;
+        }
+
+        const newKey = `${item.drugId}_${unitType}`;
+        const existing = cart.find(i => i.key === newKey);
+
+        if (!canAddToCart(item.drugId, unitType, item.quantity, item.key)) {
+            const available = getStockPills(item.drugId) - getCartReservedPills(item.drugId);
+            showNotification('Cảnh báo', `Không đủ tồn kho để đổi đơn vị cho '${item.name}'. Còn ${available} viên khả dụng.`, 'warning');
+            updateCart();
+            return;
+        }
+
+        if (existing && existing.key !== item.key) {
+            existing.quantity += item.quantity;
+            cart = cart.filter(i => i.key !== item.key);
+        } else {
+            item.key = newKey;
+            item.unitType = unitType;
+            item.unitLabel = getUnitLabel(unitType);
+            item.unitPrice = unitPrice;
+        }
+
+        updateCart();
+    }
+
+    function updateQuantity(key, change) {
+        event.stopPropagation();
+        const item = cart.find(item => item.key === key);
+        if (item) {
+            const nextQty = item.quantity + change;
+            if (nextQty > 0 && !canAddToCart(item.drugId, item.unitType, nextQty, item.key)) {
+                const available = getStockPills(item.drugId) - getCartReservedPills(item.drugId);
+                showNotification('Cảnh báo', `Không đủ tồn kho cho '${item.name}'. Còn ${available} viên khả dụng.`, 'warning');
+                return;
+            }
+
+            item.quantity = nextQty;
+            if (item.quantity <= 0) {
+                cart = cart.filter(i => i.key !== key);
+                updateCart();
+                if (cart.length === 0) {
+                        setTimeout(() => closeCart(), 300);
+                }
+            } else {
+                updateCart();
+            }
+        }
+    }
+
+    function removeFromCart(key) {
+        event.stopPropagation();
+        cart = cart.filter(item => item.key !== key);
+        updateCart();
+        if (cart.length === 0) {
+                setTimeout(() => closeCart(), 300);
+        }
+    }
+
+    function clearCart() {
+        showConfirm('Xác nhận', 'Bạn có chắc muốn xóa toàn bộ giỏ hàng?', () => {
+            cart = [];
+            updateCart();
+            setTimeout(() => closeCart(), 300);
+        });
+    }
+
+    function updateCart() {
+        const cartItemsDiv = document.getElementById('cartItems');
+        const cartCount = document.getElementById('cartCount');
+        const totalAmount = document.getElementById('totalAmount');
+        const totalItems = document.getElementById('totalItems');
+        const totalItemsBadge = document.getElementById('totalItemsBadge');
+
+        const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+        cartCount.textContent = itemCount;
+            totalItems.textContent = itemCount + ' SP';
+            totalItemsBadge.textContent = itemCount;
+
+        const total = cart.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+        totalAmount.textContent = total.toLocaleString('vi-VN') + ' đ';
+
+        if (cart.length === 0) {
+            cartItemsDiv.innerHTML = `
+                    <div class="text-center py-3">
+                        <i class="bi bi-cart-x" style="font-size: 32px; color: #adb5bd;"></i>
+                        <p class="text-muted small mt-2 mb-0">Giỏ hàng trống</p>
+                </div>
+            `;
+        } else {
+            cartItemsDiv.innerHTML = cart.map(item => `
+                <div class="cart-item">
+                        <div class="d-flex align-items-start gap-2">
+                        <img src="${item.imageUrl || '/images/no-image.png'}" 
+                                 style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;"
+                             onerror="this.src='/images/no-image.png'"
+                             alt="${item.name}">
+                        <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                    <h6 class="mb-0 fw-bold small text-truncate" style="max-width: 150px;">${item.name}</h6>
+                                    <button class="btn btn-sm btn-outline-danger p-0" onclick="removeFromCart('${item.key}')" style="width: 24px; height: 24px;">
+                                        <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                                <p class="text-success small mb-1 fw-bold">
+                                    ${item.unitPrice.toLocaleString('vi-VN')} đ <span class="text-muted">/ ${item.unitLabel}</span>
+                            </p>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <select class="form-select form-select-sm" style="width: 110px;" onchange="updateUnitType('${item.key}', this.value)">
+                                    ${item.sellPrice > 0 ? `<option value=\"pill\" ${item.unitType === 'pill' ? 'selected' : ''}>Viên</option>` : ``}
+                                    ${item.boxPrice > 0 ? `<option value=\"box\" ${item.unitType === 'box' ? 'selected' : ''}>Hộp</option>` : ``}
+                                </select>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="quantity-control">
+                                        <button class="quantity-btn" onclick="updateQuantity('${item.key}', -1)" title="Giảm số lượng">
+                                        <i class="bi bi-dash"></i>
+                                    </button>
+                                        <span class="small fw-bold px-2">${item.quantity}</span>
+                                        <button class="quantity-btn" onclick="updateQuantity('${item.key}', 1)" title="Tăng số lượng">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
+                                    <div class="text-end">
+                                        <strong class="text-success small">${(item.unitPrice * item.quantity).toLocaleString('vi-VN')} đ</strong>
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+
+    function toggleCart() {
+        const sidebar = document.getElementById('cartSidebar');
+        
+        const isOpening = !sidebar.classList.contains('active');
+        if (!isOpening && cart.length === 0) {
+                closeCart();
+            return;
+        }
+        
+        sidebar.classList.toggle('active');
+    }
+    
+    function closeCart() {
+        const sidebar = document.getElementById('cartSidebar');
+        
+        sidebar.classList.remove('active');
+    }
+
+    async function submitOrder() {
+        if (cart.length === 0) {
+            showNotification('Cảnh báo', 'Giỏ hàng trống! Vui lòng thêm sản phẩm.', 'warning');
+            return;
+        }
+
+        const customerName = document.getElementById('customerName').value.trim();
+        if (!customerName) {
+            showNotification('Cảnh báo', 'Vui lòng nhập tên khách hàng!', 'warning');
+            document.getElementById('customerName').focus();
+            return;
+        }
+
+        const customerPhone = document.getElementById('customerPhone').value.trim();
+        if (!customerPhone) {
+            showNotification('Cảnh báo', 'Vui lòng nhập số điện thoại khách hàng!', 'warning');
+            document.getElementById('customerPhone').focus();
+            return;
+        }
+
+            // Validate và map cart items
+            const items = cart.map(item => {
+                if (!item.drugId || item.drugId <= 0) {
+                    throw new Error(`DrugId không hợp lệ: ${item.drugId} cho sản phẩm ${item.name}`);
+                }
+                if (!item.quantity || item.quantity <= 0) {
+                    throw new Error(`Số lượng không hợp lệ: ${item.quantity} cho sản phẩm ${item.name}`);
+                }
+                return {
+                    drugId: parseInt(item.drugId),
+                    unitType: item.unitType,
+                    quantity: parseInt(item.quantity)
+                };
+            });
+
+        const orderData = {
+            customerName: customerName,
+            customerPhone: customerPhone || null,
+                items: items
+            };
+
+            console.log('Order data:', JSON.stringify(orderData, null, 2));
+
+        const btn = event.target?.closest ? event.target.closest('button') : event.target;
+        const originalHtml = btn?.innerHTML;
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang tạo đơn...';
+        }
+
+        try {
+            const response = await fetch('/Sales/SubmitOrder', {
+                method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+
+                showToast('Tạo đơn hàng thành công!', 'success');
+                
+                cart = [];
+                updateCart();
+                document.getElementById('customerName').value = '';
+                document.getElementById('customerPhone').value = '';
+                closeCart();
+                
+                setTimeout(() => {
+                    window.location.href = '/Sales/Details/' + result.id;
+                }, 1000);
+            } else {
+                let errorMessage = 'Lỗi không xác định';
+                try {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    const errorJson = JSON.parse(errorText);
+                    errorMessage = errorJson.message || errorText;
+                } catch (e) {
+                    errorMessage = await response.text();
+                }
+                showNotification('Lỗi tạo đơn', errorMessage, 'error');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            }
+        } catch (error) {
+            console.error('Exception:', error);
+            showNotification('Lỗi', 'Lỗi khi tạo đơn: ' + error.message, 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+    }
+
+    updateCart();
+</script>
+}

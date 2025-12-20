@@ -16,7 +16,7 @@ namespace AuthService.Model
         public string FullName { get; set; } = string.Empty;
         
         [Required]
-        public string Role { get; set; } = string.Empty;   // "Owner", "Staff"
+        public string Role { get; set; } = string.Empty;
         
         public bool IsActive { get; set; }
     }

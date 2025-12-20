@@ -1,0 +1,60 @@
+@model List<PharmaWebApp.Models.SupplierViewModel>
+@{
+    ViewData["Title"] = "Nhà cung cấp";
+}
+
+<div class="py-2">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <div class="app-page-title"><i class="bi bi-truck"></i> Nhà cung cấp</div>
+            <div class="text-muted">Quản lý danh sách nhà cung cấp và đơn nhập</div>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-primary" asp-action="Orders"><i class="bi bi-receipt"></i> Đơn nhập</a>
+            <a class="btn btn-success" asp-action="Create"><i class="bi bi-plus-circle"></i> Thêm NCC</a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+    }
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Tên</th>
+                            <th>SDT</th>
+                            <th>Địa chỉ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                @if (Model.Count == 0)
+                {
+                    <tr><td colspan="3" class="text-center text-muted py-3">Chưa có nhà cung cấp</td></tr>
+                }
+                else
+                {
+                    foreach (var s in Model)
+                    {
+                        <tr>
+                            <td>@s.Name</td>
+                            <td>@s.Phone</td>
+                            <td>@s.Address</td>
+                        </tr>
+                    }
+                }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

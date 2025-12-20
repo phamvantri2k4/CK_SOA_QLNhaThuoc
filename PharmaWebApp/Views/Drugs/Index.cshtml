@@ -1,0 +1,101 @@
+@model PharmaWebApp.Models.PagedList<PharmaWebApp.Models.DrugViewModel>
+@{
+    ViewData["Title"] = "Danh sách Thuốc";
+}
+
+<div class="container py-4">
+    <h2>Danh sách Thuốc</h2>
+    <p class="text-muted">Dữ liệu được lấy từ DrugService API</p>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger">
+            <strong>Lỗi:</strong> @ViewBag.ErrorMessage
+        </div>
+    }
+
+    <div class="mb-3">
+        <a asp-action="Create" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Thêm thuốc mới
+        </a>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-house"></i> Về trang chủ
+        </a>
+    </div>
+
+    @if (Model != null && Model.Items.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Ảnh</th>
+                        <th>Mã thuốc</th>
+                        <th>Tên thuốc</th>
+                        <th>Danh mục</th>
+                        <th>Đơn vị</th>
+                        <th>Viên/hộp</th>
+                        <th>Giá nhập</th>
+                        <th>Giá bán</th>
+                        <th>Giá hộp</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var drug in Model.Items)
+                    {
+                        <tr>
+                            <td>
+                                @if (!string.IsNullOrEmpty(drug.ImageUrl))
+                                {
+                                    <img src="@drug.ImageUrl" alt="@drug.Name" style="width: 50px; height: 50px; object-fit: cover;" />
+                                }
+                                else
+                                {
+                                    <span class="text-muted">No image</span>
+                                }
+                            </td>
+                            <td><code>@drug.Code</code></td>
+                            <td><strong>@drug.Name</strong></td>
+                            <td>@drug.Category</td>
+                            <td>@drug.Unit</td>
+                            <td>@drug.PackSize</td>
+                            <td>@drug.ImportPrice.ToString("N0") VNĐ</td>
+                            <td><strong>@drug.SellPrice.ToString("N0") VNĐ</strong></td>
+                            <td><strong>@drug.BoxPrice.ToString("N0") VNĐ</strong></td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@drug.Id" class="btn btn-sm btn-info">
+                                    <i class="bi bi-eye"></i> Chi tiết
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@drug.Id" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-pencil"></i> Sửa
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@drug.Id" class="btn btn-sm btn-danger">
+                                    <i class="bi bi-trash"></i> Xóa
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+        @* Phân trang *@
+        @await Html.PartialAsync("_Pagination", Model)
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <p class="mb-0">Chưa có thuốc nào trong hệ thống.</p>
+        </div>
+    }
+</div>
+

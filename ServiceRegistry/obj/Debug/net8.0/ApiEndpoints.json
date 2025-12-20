@@ -1,0 +1,86 @@
+[
+  {
+    "ContainingType": "ServiceRegistry.Controllers.RegistryController",
+    "Method": "Health",
+    "RelativePath": "api/Registry/health",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ServiceRegistry.Controllers.RegistryController",
+    "Method": "Heartbeat",
+    "RelativePath": "api/Registry/heartbeat/{serviceName}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "serviceName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ServiceRegistry.Controllers.RegistryController",
+    "Method": "Register",
+    "RelativePath": "api/Registry/register",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "serviceInfo",
+        "Type": "Shared.ServiceInfo",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ServiceRegistry.Controllers.RegistryController",
+    "Method": "GetAllServices",
+    "RelativePath": "api/Registry/services",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ServiceRegistry.Controllers.RegistryController",
+    "Method": "FindService",
+    "RelativePath": "api/Registry/services/{serviceName}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "serviceName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ServiceRegistry.Controllers.RegistryController",
+    "Method": "DeleteService",
+    "RelativePath": "api/Registry/services/{serviceName}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "serviceName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]

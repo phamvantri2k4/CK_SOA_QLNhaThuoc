@@ -1,0 +1,87 @@
+@model List<PharmaWebApp.Models.EmployeeListItemViewModel>
+@{
+    ViewData["Title"] = "Nhân viên";
+}
+
+<div class="py-2">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <div class="app-page-title"><i class="bi bi-people"></i> Quản lý nhân viên</div>
+            <div class="text-muted">Tạo/sửa/khoá tài khoản nhân viên bán thuốc</div>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-success"><i class="bi bi-plus-circle"></i> Thêm nhân viên</a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+    }
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tài khoản</th>
+                            <th>Họ tên</th>
+                            <th>Vai trò</th>
+                            <th>Trạng thái</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Count == 0)
+                        {
+                            <tr><td colspan="6" class="text-center text-muted py-3">Chưa có dữ liệu</td></tr>
+                        }
+                        else
+                        {
+                            foreach (var u in Model)
+                            {
+                                <tr>
+                                    <td><strong>#@u.Id</strong></td>
+                                    <td>@u.Username</td>
+                                    <td>@u.FullName</td>
+                                    <td>
+                                        <span class="badge ms-1 @(u.Role == "Owner" ? "badge-role-owner" : "badge-role-staff")">@u.Role</span>
+                                    </td>
+                                    <td>
+                                        @if (u.IsActive)
+                                        {
+                                            <span class="badge bg-success">Hoạt động</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Bị khóa</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-action="Edit" asp-route-id="@u.Id" class="btn btn-sm btn-outline-primary">Sửa</a>
+                                        <form asp-action="Delete" asp-route-id="@u.Id" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa nhân viên này?');">Xóa</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

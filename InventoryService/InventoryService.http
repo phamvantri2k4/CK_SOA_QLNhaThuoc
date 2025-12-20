@@ -1,6 +1,27 @@
-@InventoryService_HostAddress = http://localhost:5072
+@InventoryService_HostAddress = http://localhost:5006
 
-GET {{InventoryService_HostAddress}}/weatherforecast/
+GET {{InventoryService_HostAddress}}/api/inventory/status
 Accept: application/json
+
+###
+
+POST {{InventoryService_HostAddress}}/api/inventory/import
+Content-Type: application/json
+
+{
+  "drugId": 1,
+  "quantity": 10,
+  "expiryDate": null
+}
+
+###
+
+POST {{InventoryService_HostAddress}}/api/inventory/export
+Content-Type: application/json
+
+{
+  "drugId": 1,
+  "quantity": 2
+}
 
 ###

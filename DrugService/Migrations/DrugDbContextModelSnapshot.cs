@@ -29,6 +29,9 @@ namespace DrugService.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal>("BoxPrice")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Category")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -37,12 +40,18 @@ namespace DrugService.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("ImportPrice")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PackSize")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("SellPrice")
                         .HasColumnType("decimal(18,2)");

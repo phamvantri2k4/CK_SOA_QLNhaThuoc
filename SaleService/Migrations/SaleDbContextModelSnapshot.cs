@@ -36,6 +36,13 @@ namespace SaleService.Migrations
                     b.Property<int?>("CustomerId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("StaffId")
                         .HasColumnType("int");
 
@@ -67,9 +74,31 @@ namespace SaleService.Migrations
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("UnitType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("SaleInvoiceId");
+
                     b.ToTable("SaleInvoiceDetails");
+                });
+
+            modelBuilder.Entity("SaleService.Model.SaleInvoiceDetail", b =>
+                {
+                    b.HasOne("SaleService.Model.SaleInvoice", "SaleInvoice")
+                        .WithMany("Details")
+                        .HasForeignKey("SaleInvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SaleInvoice");
+                });
+
+            modelBuilder.Entity("SaleService.Model.SaleInvoice", b =>
+                {
+                    b.Navigation("Details");
                 });
 #pragma warning restore 612, 618
         }

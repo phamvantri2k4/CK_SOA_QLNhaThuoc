@@ -1,5 +1,18 @@
 ﻿namespace InventoryService.Models
 {
+    public class ImportStockRequest
+    {
+        public int DrugId { get; set; }
+        public int Quantity { get; set; }
+        public DateTime? ExpiryDate { get; set; }
+    }
+
+    public class ExportStockRequest
+    {
+        public int DrugId { get; set; }
+        public int Quantity { get; set; }
+    }
+
     public class InventoryItem
     {
         public int Id { get; set; }

@@ -1,0 +1,141 @@
+@model PharmaWebApp.Models.CreateDrugViewModel
+@{
+    ViewData["Title"] = "Sửa thuốc";
+    var categories = ViewBag.Categories as List<PharmaWebApp.Models.CategoryViewModel> ?? new List<PharmaWebApp.Models.CategoryViewModel>();
+}
+
+<div class="container py-4">
+    <h2>Sửa thuốc</h2>
+    <p class="text-muted">Cập nhật thông tin thuốc trong DrugService</p>
+
+    <div class="row">
+        <div class="col-md-8">
+            <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="ImageUrl" />
+                
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        <strong>Có lỗi xảy ra!</strong>
+                        <ul class="mb-0">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <li>@error.ErrorMessage</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="Name" class="form-label">Tên thuốc <span class="text-danger">*</span></label>
+                            <input asp-for="Name" class="form-control" placeholder="Ví dụ: Paracetamol" required />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Code" class="form-label">Mã thuốc <span class="text-danger">*</span></label>
+                            <input asp-for="Code" class="form-control" placeholder="Ví dụ: P001" required />
+                            <span asp-validation-for="Code" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="Category" class="form-label">Danh mục</label>
+                                <select asp-for="Category" class="form-select">
+                                    <option value="">-- Chọn danh mục --</option>
+                                    @foreach (var c in categories)
+                                    {
+                                        <option value="@c.Name">@c.Name</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="Category" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="Unit" class="form-label">Đơn vị</label>
+                                <input asp-for="Unit" class="form-control" placeholder="Ví dụ: Viên" />
+                                <span asp-validation-for="Unit" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="PackSize" class="form-label">Số viên / hộp <span class="text-danger">*</span></label>
+                            <input asp-for="PackSize" type="number" min="1" class="form-control" placeholder="Ví dụ: 10" required />
+                            <span asp-validation-for="PackSize" class="text-danger"></span>
+                            <small class="text-muted">Nhập 1 nếu thuốc chỉ bán lẻ theo viên</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="ImportPrice" class="form-label">Giá nhập (VNĐ)</label>
+                                <input asp-for="ImportPrice" type="number" step="0.01" class="form-control" placeholder="0" />
+                                <span asp-validation-for="ImportPrice" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="SellPrice" class="form-label">Giá bán lẻ (VNĐ / 1 đơn vị)</label>
+                            <input asp-for="SellPrice" type="number" step="0.01" class="form-control" placeholder="0" />
+                            <span asp-validation-for="SellPrice" class="text-danger"></span>
+                            <small class="text-muted">Đơn vị nằm ở ô "Đơn vị" (ví dụ: Viên)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="BoxPrice" class="form-label">Giá bán hộp (VNĐ / 1 hộp)</label>
+                            <input asp-for="BoxPrice" type="number" step="0.01" class="form-control" placeholder="0" />
+                            <span asp-validation-for="BoxPrice" class="text-danger"></span>
+                            <small class="text-muted">Nhập 0 nếu không bán theo hộp</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="ImageFile" class="form-label">Ảnh thuốc mới (tùy chọn)</label>
+                            <input asp-for="ImageFile" type="file" accept="image/*" class="form-control" />
+                            <span asp-validation-for="ImageFile" class="text-danger"></span>
+                            <small class="text-muted">Chọn file ảnh mới để thay thế ảnh hiện tại (jpg, png, gif) - tối đa 5MB</small>
+                            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                            {
+                                <div class="mt-2">
+                                    <label class="form-label">Ảnh hiện tại:</label>
+                                    <br />
+                                    <img src="@Model.ImageUrl" alt="@Model.Name" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;" />
+                                </div>
+                            }
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Lưu thay đổi
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Hủy
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">Hướng dẫn</h5>
+                    <p class="card-text small">
+                        - Tên thuốc và Mã thuốc là bắt buộc<br>
+                        - Giá bán phải lớn hơn 0<br>
+                        - Nếu không chọn ảnh mới, ảnh cũ sẽ được giữ nguyên<br>
+                        - Dữ liệu sẽ được cập nhật trong DrugService qua API
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+

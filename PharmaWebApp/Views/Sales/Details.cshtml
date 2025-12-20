@@ -1,0 +1,211 @@
+@model PharmaWebApp.Models.SaleInvoiceDisplayViewModel
+@{
+    ViewData["Title"] = "Chi tiết Hóa đơn";
+}
+
+<div class="container py-4">
+    <h2>Chi tiết Hóa đơn</h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger">
+            <strong>Lỗi:</strong> @ViewBag.ErrorMessage
+        </div>
+    }
+
+    @if (Model != null)
+    {
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">Hóa đơn #@Model.Id</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <table class="table">
+                            <tr>
+                                <th width="150">Mã hóa đơn:</th>
+                                <td><strong>#@Model.Id</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Ngày tạo:</th>
+                                <td>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                            </tr>
+                            <tr>
+                                <th>Trạng thái:</th>
+                                <td>
+                                    @if (Model.PaymentStatus == "Paid")
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Đã thanh toán
+                                        </span>
+                                        @if (Model.PaidAt.HasValue)
+                                        {
+                                            <small class="text-muted ms-2">(@Model.PaidAt.Value.ToString("dd/MM/yyyy HH:mm"))</small>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">
+                                            <i class="bi bi-clock"></i> Chờ thanh toán
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table">
+                            <tr>
+                                <th width="150">Khách hàng:</th>
+                                <td>@Model.CustomerName</td>
+                            </tr>
+                            <tr>
+                                <th>Nhân viên:</th>
+                                <td>
+                                    <strong>NV-@Model.StaffId</strong>
+                                    @if (!string.IsNullOrEmpty(Model.StaffName))
+                                    {
+                                        <span class="text-muted"> - @Model.StaffName</span>
+                                    }
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <h5>Chi tiết sản phẩm</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Mã thuốc</th>
+                                <th>Tên thuốc</th>
+                                <th class="text-center">Đơn vị</th>
+                                <th class="text-center">Số lượng</th>
+                                <th class="text-end">Đơn giá</th>
+                                <th class="text-end">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td>@item.DrugId</td>
+                                    <td><strong>@item.DrugName</strong></td>
+                                    <td class="text-center">@item.UnitType</td>
+                                    <td class="text-center">@item.Quantity</td>
+                                    <td class="text-end">@item.UnitPrice.ToString("N0") VNĐ</td>
+                                    <td class="text-end"><strong>@item.LineTotal.ToString("N0") VNĐ</strong></td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-success">
+                                <td colspan="5" class="text-end"><strong>TỔNG CỘNG:</strong></td>
+                                <td class="text-end"><strong class="fs-5">@Model.TotalAmount.ToString("N0") VNĐ</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <a asp-action="OrderCreate" class="btn btn-success btn-lg">
+                            <i class="bi bi-cart-plus"></i> Tạo hóa đơn mới
+                        </a>
+                        <a asp-action="Index" class="btn btn-primary">
+                            <i class="bi bi-list"></i> Danh sách hóa đơn
+                        </a>
+                    </div>
+                    <div>
+                        <button onclick="window.print()" class="btn btn-info">
+                            <i class="bi bi-printer"></i> In hóa đơn
+                        </button>
+                        @if (Model.PaymentStatus == "Pending")
+                        {
+                            <button onclick="completePayment()" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle"></i> Thanh toán
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-success btn-lg" disabled>
+                                <i class="bi bi-check-circle-fill"></i> Đã thanh toán
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    @@media print {
+        .card-footer, .btn, nav, header {
+            display: none !important;
+        }
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+    }
+</style>
+
+@Html.AntiForgeryToken()
+
+<script>
+    async function completePayment() {
+        const message = `Xác nhận thanh toán hóa đơn #@Model.Id?\n\nTổng tiền: @Model.TotalAmount.ToString("N0") VNĐ`;
+        
+        showConfirm('Xác nhận thanh toán', message, async () => {
+            try {
+                const response = await fetch('@Url.Action("MarkAsPaid", "Sales", new { id = Model.Id })', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showToast('Thanh toán thành công!', 'success');
+                    setTimeout(() => {
+                        window.location.href = '@Url.Action("OrderCreate", "Sales")';
+                    }, 1000);
+                } else {
+                    const errorText = await response.text();
+                    let errorMessage = 'Lỗi không xác định';
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        errorMessage = errorJson.message || errorText;
+                    } catch {
+                        errorMessage = errorText;
+                    }
+                    showNotification('Lỗi thanh toán', errorMessage, 'error');
+                }
+            } catch (error) {
+                showNotification('Lỗi', 'Lỗi khi thanh toán: ' + error.message, 'error');
+            }
+        });
+    }
+</script>
+

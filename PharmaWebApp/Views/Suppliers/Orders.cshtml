@@ -1,0 +1,67 @@
+@model List<PharmaWebApp.Models.PurchaseOrderViewModel>
+@{
+    ViewData["Title"] = "Đơn nhập";
+}
+
+<div class="py-2">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <div class="app-page-title"><i class="bi bi-receipt"></i> Đơn nhập</div>
+            <div class="text-muted">Danh sách đơn nhập hàng từ nhà cung cấp</div>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary" asp-action="Index"><i class="bi bi-arrow-left"></i> NCC</a>
+            <a class="btn btn-success" asp-action="CreateOrder"><i class="bi bi-plus-circle"></i> Tạo đơn nhập</a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+    }
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nhà cung cấp</th>
+                            <th>Ngày tạo</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                @if (Model.Count == 0)
+                {
+                    <tr><td colspan="4" class="text-center text-muted py-3">Chưa có đơn nhập</td></tr>
+                }
+                else
+                {
+                    foreach (var o in Model)
+                    {
+                        <tr>
+                            <td>#@o.Id</td>
+                            <td>
+                                <div><strong>@(string.IsNullOrWhiteSpace(o.SupplierName) ? $"NCC #{o.SupplierId}" : o.SupplierName)</strong></div>
+                                <div class="text-muted small">ID: @o.SupplierId</div>
+                            </td>
+                            <td>@o.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-outline-primary" asp-action="OrderDetails" asp-route-id="@o.Id">Chi tiết</a>
+                            </td>
+                        </tr>
+                    }
+                }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

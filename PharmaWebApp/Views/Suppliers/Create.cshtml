@@ -1,0 +1,48 @@
+@model PharmaWebApp.Models.CreateSupplierViewModel
+@{
+    ViewData["Title"] = "Thêm nhà cung cấp";
+}
+
+<div class="py-2">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <div class="app-page-title"><i class="bi bi-plus-circle"></i> Thêm nhà cung cấp</div>
+            <div class="text-muted">Nhập thông tin nhà cung cấp</div>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Quay lại</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tên <span class="text-danger">*</span></label>
+                            <input asp-for="Name" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                            <input asp-for="Phone" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Địa chỉ <span class="text-danger">*</span></label>
+                            <input asp-for="Address" class="form-control" required />
+                        </div>
+
+                        <button type="submit" class="btn btn-success">Lưu</button>
+                        <a asp-action="Index" class="btn btn-secondary">Hủy</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

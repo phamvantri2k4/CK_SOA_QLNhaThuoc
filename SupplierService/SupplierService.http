@@ -1,6 +1,18 @@
-@SupplierService_HostAddress = http://localhost:5293
+@SupplierService_HostAddress = http://localhost:5007
 
-GET {{SupplierService_HostAddress}}/weatherforecast/
-Accept: application/json
+POST {{SupplierService_HostAddress}}/api/supplier/orders
+Content-Type: application/json
+
+{
+  "supplierId": 1,
+  "details": [
+    {
+      "drugId": 1,
+      "quantity": 10,
+      "unitPrice": 10000,
+      "expiryDate": null
+    }
+  ]
+}
 
 ###

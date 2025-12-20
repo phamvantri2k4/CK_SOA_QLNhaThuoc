@@ -1,0 +1,53 @@
+@model PharmaWebApp.Models.SalesReportViewModel
+@{
+    ViewData["Title"] = "Báo cáo tháng";
+    var y = Model.SelectedYear ?? DateTime.Today.Year;
+    var m = Model.SelectedMonth ?? DateTime.Today.Month;
+}
+
+<div class="py-2">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <div class="app-page-title"><i class="bi bi-graph-up"></i> Báo cáo theo tháng</div>
+            <div class="text-muted">Tổng hợp doanh thu & hóa đơn trong tháng</div>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Day" class="btn btn-outline-primary">Ngày</a>
+            <a asp-action="Year" class="btn btn-outline-primary">Năm</a>
+        </div>
+    </div>
+
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+    }
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Năm</label>
+                    <input type="number" name="year" class="form-control" value="@y" min="2000" max="2100" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Tháng</label>
+                    <input type="number" name="month" class="form-control" value="@m" min="1" max="12" />
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-success" type="submit"><i class="bi bi-search"></i> Xem</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_ReportSummaryCards", Model)
+
+    <div class="row g-3 mt-1">
+        <div class="col-lg-5">
+            @await Html.PartialAsync("_ReportTopDrugs", Model)
+        </div>
+        <div class="col-lg-7">
+            @await Html.PartialAsync("_ReportInvoices", Model)
+        </div>
+    </div>
+</div>

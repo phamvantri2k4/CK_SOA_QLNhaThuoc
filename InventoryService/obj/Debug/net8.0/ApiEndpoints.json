@@ -1,0 +1,54 @@
+[
+  {
+    "ContainingType": "InventoryService.Controllers.InventoryController",
+    "Method": "ExpiryWarning",
+    "RelativePath": "api/inventory/expiry-warning",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InventoryService.Controllers.InventoryController",
+    "Method": "ExportStock",
+    "RelativePath": "api/inventory/export",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "InventoryService.Models.ExportStockRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InventoryService.Controllers.InventoryController",
+    "Method": "ImportStock",
+    "RelativePath": "api/inventory/import",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "InventoryService.Models.ImportStockRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InventoryService.Controllers.InventoryController",
+    "Method": "InventoryStatus",
+    "RelativePath": "api/inventory/status",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  }
+]

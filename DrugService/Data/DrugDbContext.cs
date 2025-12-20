@@ -10,5 +10,6 @@ public class DrugDbContext : DbContext
     }
 
     public DbSet<Drug> Drugs { get; set; } = null!;
+    public DbSet<Category> Categories { get; set; } = null!;
 }
 

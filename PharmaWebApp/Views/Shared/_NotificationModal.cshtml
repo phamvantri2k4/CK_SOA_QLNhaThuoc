@@ -1,0 +1,183 @@
+<!-- Modal Notification System -->
+<div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" id="notificationModalHeader">
+                <h5 class="modal-title" id="notificationModalTitle">
+                    <i class="bi bi-info-circle me-2"></i> Thông báo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="notificationModalBody">
+                <!-- Nội dung thông báo sẽ được chèn vào đây -->
+            </div>
+            <div class="modal-footer" id="notificationModalFooter">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="confirmModalTitle">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Xác nhận
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="confirmModalBody">
+                <!-- Nội dung xác nhận sẽ được chèn vào đây -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="confirmModalOkBtn">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+    <div id="toastNotification" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header" id="toastHeader">
+            <i class="bi bi-info-circle me-2" id="toastIcon"></i>
+            <strong class="me-auto" id="toastTitle">Thông báo</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toastBody">
+            <!-- Nội dung toast sẽ được chèn vào đây -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // Notification Modal Functions
+    function showNotification(title, message, type = 'info') {
+        const modal = new bootstrap.Modal(document.getElementById('notificationModal'));
+        const modalTitle = document.getElementById('notificationModalTitle');
+        const modalBody = document.getElementById('notificationModalBody');
+        const modalHeader = document.getElementById('notificationModalHeader');
+        
+        // Set icon and color based on type
+        let icon = 'bi-info-circle';
+        let bgClass = 'bg-info';
+        
+        switch(type) {
+            case 'success':
+                icon = 'bi-check-circle';
+                bgClass = 'bg-success';
+                break;
+            case 'error':
+            case 'danger':
+                icon = 'bi-x-circle';
+                bgClass = 'bg-danger';
+                break;
+            case 'warning':
+                icon = 'bi-exclamation-triangle';
+                bgClass = 'bg-warning';
+                break;
+        }
+        
+        modalTitle.innerHTML = `<i class="bi ${icon} me-2"></i> ${title}`;
+        modalBody.innerHTML = message.replace(/\n/g, '<br>');
+        modalHeader.className = `modal-header ${bgClass} text-white`;
+        
+        modal.show();
+    }
+    
+    function showConfirm(title, message, onConfirm) {
+        const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        const modalTitle = document.getElementById('confirmModalTitle');
+        const modalBody = document.getElementById('confirmModalBody');
+        const confirmBtn = document.getElementById('confirmModalOkBtn');
+        
+        modalTitle.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i> ${title}`;
+        modalBody.innerHTML = message.replace(/\n/g, '<br>');
+        
+        // Remove previous event listeners
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        
+        newConfirmBtn.addEventListener('click', () => {
+            modal.hide();
+            if (onConfirm) onConfirm();
+        });
+        
+        modal.show();
+    }
+    
+    function showToast(message, type = 'info', duration = 3000) {
+        const toastEl = document.getElementById('toastNotification');
+        const toast = new bootstrap.Toast(toastEl, { delay: duration });
+        const toastHeader = document.getElementById('toastHeader');
+        const toastIcon = document.getElementById('toastIcon');
+        const toastBody = document.getElementById('toastBody');
+        
+        // Set icon and color based on type
+        let icon = 'bi-info-circle';
+        let bgClass = 'bg-info';
+        
+        switch(type) {
+            case 'success':
+                icon = 'bi-check-circle';
+                bgClass = 'bg-success';
+                break;
+            case 'error':
+            case 'danger':
+                icon = 'bi-x-circle';
+                bgClass = 'bg-danger';
+                break;
+            case 'warning':
+                icon = 'bi-exclamation-triangle';
+                bgClass = 'bg-warning';
+                break;
+        }
+        
+        toastIcon.className = `bi ${icon} me-2`;
+        toastHeader.className = `toast-header ${bgClass} text-white`;
+        toastBody.textContent = message;
+        
+        toast.show();
+    }
+    
+    // Replace window.alert and window.confirm
+    window.originalAlert = window.alert;
+    window.originalConfirm = window.confirm;
+    
+    window.alert = function(message) {
+        showNotification('Thông báo', message, 'info');
+    };
+    
+    window.confirm = function(message) {
+        return new Promise((resolve) => {
+            showConfirm('Xác nhận', message, () => resolve(true));
+            // Auto resolve false when modal is closed without clicking confirm
+            const modal = document.getElementById('confirmModal');
+            modal.addEventListener('hidden.bs.modal', () => {
+                if (!document.getElementById('confirmModalOkBtn').hasAttribute('data-confirmed')) {
+                    resolve(false);
+                }
+            }, { once: true });
+        });
+    };
+</script>
+
+<style>
+    .modal-header.bg-success,
+    .modal-header.bg-danger,
+    .modal-header.bg-warning,
+    .modal-header.bg-info {
+        border-bottom: none;
+    }
+    
+    .toast-header.bg-success,
+    .toast-header.bg-danger,
+    .toast-header.bg-warning,
+    .toast-header.bg-info {
+        border-bottom: none;
+    }
+</style>
+

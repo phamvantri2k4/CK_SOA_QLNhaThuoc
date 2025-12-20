@@ -1,0 +1,76 @@
+@model dynamic
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var pageSize = Model.PageSize;
+    var currentPage = Model.CurrentPage;
+    var totalPages = Model.TotalPages;
+}
+
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="Phân trang">
+        <ul class="pagination justify-content-center">
+            @* Nút Previous *@
+            <li class="page-item @(Model.HasPrevious ? "" : "disabled")">
+                <a class="page-link" href="@Url.Action(action, controller, new { page = currentPage - 1, pageSize = pageSize })" aria-label="Trước">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+
+            @* Hiển thị các số trang *@
+            @{
+                int startPage = Math.Max(1, currentPage - 2);
+                int endPage = Math.Min(totalPages, currentPage + 2);
+
+                if (startPage > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action(action, controller, new { page = 1, pageSize = pageSize })">1</a>
+                    </li>
+                    @if (startPage > 2)
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    }
+                }
+
+                @for (int i = startPage; i <= endPage; i++)
+                {
+                    <li class="page-item @(i == currentPage ? "active" : "")">
+                        <a class="page-link" href="@Url.Action(action, controller, new { page = i, pageSize = pageSize })">@i</a>
+                    </li>
+                }
+
+                @if (endPage < totalPages)
+                {
+                    @if (endPage < totalPages - 1)
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    }
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action(action, controller, new { page = totalPages, pageSize = pageSize })">@totalPages</a>
+                    </li>
+                }
+            }
+
+            @* Nút Next *@
+            <li class="page-item @(Model.HasNext ? "" : "disabled")">
+                <a class="page-link" href="@Url.Action(action, controller, new { page = currentPage + 1, pageSize = pageSize })" aria-label="Sau">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="text-center mt-2">
+        <small class="text-muted">
+            Hiển thị <strong>@((currentPage - 1) * pageSize + 1)</strong> - <strong>@Math.Min(currentPage * pageSize, Model.TotalCount)</strong> 
+            trong tổng số <strong>@Model.TotalCount</strong> bản ghi
+        </small>
+    </div>
+}
+

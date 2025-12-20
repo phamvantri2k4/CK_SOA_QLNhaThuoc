@@ -1,0 +1,43 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "DrugService\\DrugService.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "SaleService\\SaleService.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "PharmaWebApp\\PharmaWebApp.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "ServiceRegistry\\ServiceRegistry.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "CustomerService\\CustomerService.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "AuthService\\AuthService.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "InventoryService\\InventoryService.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "SupplierService\\SupplierService.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "ReportingService\\ReportingService.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]
