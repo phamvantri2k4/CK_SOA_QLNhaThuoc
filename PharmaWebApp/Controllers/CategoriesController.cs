@@ -9,173 +9,130 @@ namespace PharmaWebApp.Controllers
     [Authorize(Policy = "OwnerOnly")]
     public class CategoriesController : BaseController
     {
-        private readonly ILogger<CategoriesController> _logger;
-        private readonly IServiceResolver _serviceResolver;
+        private readonly IServiceResolver _resolver;
 
-        public CategoriesController(ILogger<CategoriesController> logger, IServiceResolver serviceResolver)
+        public CategoriesController(IServiceResolver resolver)
         {
-            _logger = logger;
-            _serviceResolver = serviceResolver;
+            _resolver = resolver;
         }
+
+        /* ================= HÀM DÙNG CHUNG ================= */
+
+        private async Task<(HttpClient client, string url)> GetClientAsync()
+        {
+            var url = await _resolver.GetRequiredAsync("DrugService");
+            return (CreateAuthenticatedHttpClient(), url);
+        }
+
+        /* ================= DANH SÁCH ================= */
 
         public async Task<IActionResult> Index()
         {
             try
             {
-                var drugServiceUrl = await _serviceResolver.GetRequiredAsync("DrugService");
-                var httpClient = CreateAuthenticatedHttpClient();
+                var (client, url) = await GetClientAsync();
 
-                var categories = await httpClient.GetFromJsonAsync<List<CategoryViewModel>>($"{drugServiceUrl}/api/categories") ?? new();
-                categories = categories.OrderBy(c => c.Name).ToList();
-                return View(categories);
+                var categories = await client.GetFromJsonAsync<List<CategoryViewModel>>(
+                    $"{url}/api/categories") ?? new();
+
+                return View(categories.OrderBy(c => c.Name).ToList());
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Lỗi khi lấy danh sách danh mục: {ex.Message}");
-                ViewBag.ErrorMessage = ex.Message;
+                ViewBag.ErrorMessage = $"Lỗi khi tải danh mục: {ex.Message}";
                 return View(new List<CategoryViewModel>());
             }
         }
 
-        [HttpGet]
+        /* ================= CREATE ================= */
+
         public IActionResult Create()
         {
             return View(new CategoryViewModel());
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(CategoryViewModel model)
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(CategoryViewModel m)
         {
-            if (!ModelState.IsValid) return View(model);
+            if (!ModelState.IsValid) return View(m);
 
-            try
+            var (client, url) = await GetClientAsync();
+
+            var res = await client.PostAsJsonAsync(
+                $"{url}/api/categories",
+                new { name = m.Name });
+
+            if (!res.IsSuccessStatusCode)
             {
-                var drugServiceUrl = await _serviceResolver.GetRequiredAsync("DrugService");
-                var httpClient = CreateAuthenticatedHttpClient();
-
-                var payload = new { name = model.Name };
-                var resp = await httpClient.PostAsJsonAsync($"{drugServiceUrl}/api/categories", payload);
-
-                if (resp.IsSuccessStatusCode)
-                {
-                    TempData["SuccessMessage"] = "Đã tạo danh mục";
-                    return RedirectToAction(nameof(Index));
-                }
-
-                var error = await resp.Content.ReadAsStringAsync();
-                ModelState.AddModelError("", error);
-                return View(model);
+                ModelState.AddModelError("", "Không thể tạo danh mục");
+                return View(m);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi tạo danh mục: {ex.Message}");
-                ModelState.AddModelError("", ex.Message);
-                return View(model);
-            }
+
+            TempData["SuccessMessage"] = "Đã tạo danh mục";
+            return RedirectToAction(nameof(Index));
         }
 
-        [HttpGet]
+        /* ================= EDIT ================= */
+
         public async Task<IActionResult> Edit(int id)
         {
-            try
-            {
-                var drugServiceUrl = await _serviceResolver.GetRequiredAsync("DrugService");
-                var httpClient = CreateAuthenticatedHttpClient();
+            var (client, url) = await GetClientAsync();
 
-                var categories = await httpClient.GetFromJsonAsync<List<CategoryViewModel>>($"{drugServiceUrl}/api/categories") ?? new();
-                var category = categories.FirstOrDefault(c => c.Id == id);
-                if (category == null) return NotFound();
+            var categories = await client.GetFromJsonAsync<List<CategoryViewModel>>(
+                $"{url}/api/categories") ?? new();
 
-                return View(category);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi lấy danh mục #{id}: {ex.Message}");
-                return NotFound();
-            }
+            var category = categories.FirstOrDefault(c => c.Id == id);
+            if (category == null) return NotFound();
+
+            return View(category);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, CategoryViewModel model)
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, CategoryViewModel m)
         {
-            if (id != model.Id) return NotFound();
-            if (!ModelState.IsValid) return View(model);
+            if (id != m.Id || !ModelState.IsValid)
+                return View(m);
 
-            try
+            var (client, url) = await GetClientAsync();
+
+            var res = await client.PutAsJsonAsync(
+                $"{url}/api/categories/{id}",
+                new { name = m.Name });
+
+            if (!res.IsSuccessStatusCode)
             {
-                var drugServiceUrl = await _serviceResolver.GetRequiredAsync("DrugService");
-                var httpClient = CreateAuthenticatedHttpClient();
-
-                var payload = new { name = model.Name };
-                var resp = await httpClient.PutAsJsonAsync($"{drugServiceUrl}/api/categories/{id}", payload);
-
-                if (resp.IsSuccessStatusCode)
-                {
-                    TempData["SuccessMessage"] = "Đã cập nhật danh mục";
-                    return RedirectToAction(nameof(Index));
-                }
-
-                var error = await resp.Content.ReadAsStringAsync();
-                ModelState.AddModelError("", error);
-                return View(model);
+                ModelState.AddModelError("", "Không thể cập nhật danh mục");
+                return View(m);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi cập nhật danh mục #{id}: {ex.Message}");
-                ModelState.AddModelError("", ex.Message);
-                return View(model);
-            }
+
+            TempData["SuccessMessage"] = "Đã cập nhật danh mục";
+            return RedirectToAction(nameof(Index));
         }
 
-        [HttpGet]
+        /* ================= DELETE ================= */
+
         public async Task<IActionResult> Delete(int id)
         {
-            try
-            {
-                var drugServiceUrl = await _serviceResolver.GetRequiredAsync("DrugService");
-                var httpClient = CreateAuthenticatedHttpClient();
+            var (client, url) = await GetClientAsync();
 
-                var categories = await httpClient.GetFromJsonAsync<List<CategoryViewModel>>($"{drugServiceUrl}/api/categories") ?? new();
-                var category = categories.FirstOrDefault(c => c.Id == id);
-                if (category == null) return NotFound();
+            var categories = await client.GetFromJsonAsync<List<CategoryViewModel>>(
+                $"{url}/api/categories") ?? new();
 
-                return View(category);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi lấy danh mục #{id}: {ex.Message}");
-                return NotFound();
-            }
+            var category = categories.FirstOrDefault(c => c.Id == id);
+            if (category == null) return NotFound();
+
+            return View(category);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [ActionName("Delete")]
+        [HttpPost, ValidateAntiForgeryToken, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            try
-            {
-                var drugServiceUrl = await _serviceResolver.GetRequiredAsync("DrugService");
-                var httpClient = CreateAuthenticatedHttpClient();
+            var (client, url) = await GetClientAsync();
 
-                var resp = await httpClient.DeleteAsync($"{drugServiceUrl}/api/categories/{id}");
-                if (resp.IsSuccessStatusCode)
-                {
-                    TempData["SuccessMessage"] = "Đã xóa danh mục";
-                    return RedirectToAction(nameof(Index));
-                }
+            await client.DeleteAsync($"{url}/api/categories/{id}");
 
-                TempData["ErrorMessage"] = await resp.Content.ReadAsStringAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi xóa danh mục #{id}: {ex.Message}");
-                TempData["ErrorMessage"] = ex.Message;
-                return RedirectToAction(nameof(Index));
-            }
+            TempData["SuccessMessage"] = "Đã xóa danh mục";
+            return RedirectToAction(nameof(Index));
         }
     }
 }

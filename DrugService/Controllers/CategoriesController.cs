@@ -4,152 +4,92 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace DrugService.Controllers
+namespace DrugService.Controllers;
+
+[ApiController]
+[Route("api/categories")]
+[Authorize]
+public class CategoriesController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Authorize]
-    public class CategoriesController : ControllerBase
+    private readonly DrugDbContext _db;
+    private readonly ILogger<CategoriesController> _log;
+
+    public CategoriesController(DrugDbContext db, ILogger<CategoriesController> log)
     {
-        private readonly DrugDbContext _context;
-        private readonly ILogger<CategoriesController> _logger;
+        _db = db;
+        _log = log;
+    }
 
-        public CategoriesController(DrugDbContext context, ILogger<CategoriesController> logger)
-        {
-            _context = context;
-            _logger = logger;
-        }
+    /* ===== GET ALL ===== */
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
-        {
-            try
-            {
-                var categories = await _context.Categories
-                    .OrderBy(c => c.Name)
-                    .ToListAsync();
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+        => Ok(await _db.Categories.OrderBy(x => x.Name).ToListAsync());
 
-                return Ok(categories);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi lấy danh sách danh mục: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi lấy danh sách danh mục" });
-            }
-        }
+    /* ===== GET BY ID ===== */
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Category>> GetCategory(int id)
-        {
-            try
-            {
-                var category = await _context.Categories.FindAsync(id);
-                if (category == null)
-                {
-                    return NotFound(new { message = "Không tìm thấy danh mục" });
-                }
+    [HttpGet("{id}")]
+    public async Task<IActionResult> Get(int id)
+    {
+        var c = await _db.Categories.FindAsync(id);
+        return c == null ? NotFound("Category not found") : Ok(c);
+    }
 
-                return Ok(category);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi lấy danh mục #{id}: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi lấy danh mục" });
-            }
-        }
+    /* ===== CREATE ===== */
 
-        [HttpPost]
-        public async Task<ActionResult<Category>> Create([FromBody] Category category)
-        {
-            try
-            {
-                var name = category?.Name?.Trim() ?? string.Empty;
-                if (string.IsNullOrWhiteSpace(name))
-                {
-                    return BadRequest(new { message = "Tên danh mục không được để trống" });
-                }
+    [HttpPost]
+    public async Task<IActionResult> Create(Category req)
+    {
+        var name = req?.Name?.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+            return BadRequest("Name is required");
 
-                var exists = await _context.Categories.AnyAsync(c => c.Name == name);
-                if (exists)
-                {
-                    return Conflict(new { message = "Danh mục đã tồn tại" });
-                }
+        if (await _db.Categories.AnyAsync(x => x.Name == name))
+            return Conflict("Category already exists");
 
-                var entity = new Category { Name = name };
-                _context.Categories.Add(entity);
-                await _context.SaveChangesAsync();
+        var c = new Category { Name = name };
+        _db.Categories.Add(c);
+        await _db.SaveChangesAsync();
 
-                return CreatedAtAction(nameof(GetCategory), new { id = entity.Id }, entity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi tạo danh mục: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi tạo danh mục" });
-            }
-        }
+        return CreatedAtAction(nameof(Get), new { id = c.Id }, c);
+    }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] Category category)
-        {
-            try
-            {
-                var name = category?.Name?.Trim() ?? string.Empty;
-                if (string.IsNullOrWhiteSpace(name))
-                {
-                    return BadRequest(new { message = "Tên danh mục không được để trống" });
-                }
+    /* ===== UPDATE ===== */
 
-                var entity = await _context.Categories.FindAsync(id);
-                if (entity == null)
-                {
-                    return NotFound(new { message = "Không tìm thấy danh mục" });
-                }
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, Category req)
+    {
+        var name = req?.Name?.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+            return BadRequest("Name is required");
 
-                var exists = await _context.Categories.AnyAsync(c => c.Id != id && c.Name == name);
-                if (exists)
-                {
-                    return Conflict(new { message = "Danh mục đã tồn tại" });
-                }
+        var c = await _db.Categories.FindAsync(id);
+        if (c == null) return NotFound("Category not found");
 
-                entity.Name = name;
-                await _context.SaveChangesAsync();
+        if (await _db.Categories.AnyAsync(x => x.Id != id && x.Name == name))
+            return Conflict("Category already exists");
 
-                return Ok(entity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi cập nhật danh mục: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi cập nhật danh mục" });
-            }
-        }
+        c.Name = name;
+        await _db.SaveChangesAsync();
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            try
-            {
-                var entity = await _context.Categories.FindAsync(id);
-                if (entity == null)
-                {
-                    return NotFound(new { message = "Không tìm thấy danh mục" });
-                }
+        return Ok(c);
+    }
 
-                var isUsed = await _context.Drugs.AnyAsync(d => d.Category == entity.Name);
-                if (isUsed)
-                {
-                    return Conflict(new { message = "Danh mục đang được sử dụng bởi thuốc, không thể xóa" });
-                }
+    /* ===== DELETE ===== */
 
-                _context.Categories.Remove(entity);
-                await _context.SaveChangesAsync();
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var c = await _db.Categories.FindAsync(id);
+        if (c == null) return NotFound("Category not found");
 
-                return Ok(new { message = "Đã xóa danh mục" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi xóa danh mục: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi xóa danh mục" });
-            }
-        }
+        var used = await _db.Drugs.AnyAsync(d => d.Category == c.Name);
+        if (used)
+            return Conflict("Category is being used by drugs");
+
+        _db.Categories.Remove(c);
+        await _db.SaveChangesAsync();
+
+        return NoContent();
     }
 }

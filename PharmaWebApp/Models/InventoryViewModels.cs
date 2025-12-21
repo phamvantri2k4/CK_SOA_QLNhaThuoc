@@ -14,6 +14,7 @@ namespace PharmaWebApp.Models
         public string? ImportSupplierName { get; set; }
         public DateTime? ImportCreatedAt { get; set; }
         public decimal? SellPrice { get; set; }
+        public decimal? SellPricePerPill { get; set; }
         public decimal? BoxPrice { get; set; }
     }
 
@@ -32,5 +33,11 @@ namespace PharmaWebApp.Models
         public string? DrugName { get; set; }
         public int TotalQuantity { get; set; }
         public int PackSize { get; set; } = 1;
+        public decimal? SellPrice { get; set; }
+        public decimal? SellPricePerPill { get; set; }
+        public decimal? BoxPrice { get; set; }
+        public decimal? ImportPrice { get; set; }
+        public string? ImportSupplierName { get; set; }
+        public DateTime? ImportCreatedAt { get; set; }
     }
 }

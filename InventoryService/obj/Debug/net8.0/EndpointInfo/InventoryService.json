@@ -67,7 +67,7 @@
         }
       }
     },
-    "/api/inventory/expiry-warning": {
+    "/api/inventory/status": {
       "get": {
         "tags": [
           "Inventory"
@@ -79,7 +79,7 @@
         }
       }
     },
-    "/api/inventory/status": {
+    "/api/inventory/expiry-warning": {
       "get": {
         "tags": [
           "Inventory"

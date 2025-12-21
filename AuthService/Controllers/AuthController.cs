@@ -1,10 +1,8 @@
 ﻿using AuthService.Data;
-using AuthService.Dtos;
 using AuthService.Model;
 using BCrypt.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -25,10 +23,11 @@ namespace AuthService.Controllers
             _config = config;
         }
 
+        /* ================= REGISTER ================= */
+
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserRegisterDto dto)
         {
-            // kiểm tra tồn tại username
             if (await _db.Users.AnyAsync(u => u.Username == dto.Username))
                 return BadRequest(new { message = "Username already exists" });
 
@@ -44,88 +43,93 @@ namespace AuthService.Controllers
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
 
-            var res = new UserResponseDto
-            {
-                Id = user.Id,
-                Username = user.Username,
-                FullName = user.FullName,
-                Role = user.Role,
-                IsActive = user.IsActive
-            };
-
-            // Trỏ chính xác tới UsersController và method GetById
             return CreatedAtAction(
-                actionName: "GetById",      // tên method trong UsersController
-                controllerName: "Users",    // tên controller (bỏ "Controller")
-                routeValues: new { id = user.Id },
-                value: res
+                nameof(UsersController.GetById),
+                "Users",
+                new { id = user.Id },
+                ToUserResponse(user)
             );
         }
+
+        /* ================= LOGIN ================= */
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(UserLoginDto dto)
         {
             var user = await _db.Users.SingleOrDefaultAsync(u => u.Username == dto.Username);
-            if (user == null) return Unauthorized(new { message = "Invalid username or password" });
-            if (!user.IsActive) return Unauthorized(new { message = "Account not active" });
 
-            bool valid = BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash);
-            if (!valid) return Unauthorized(new { message = "Invalid username or password" });
+            if (user == null || !user.IsActive)
+                return Unauthorized(new { message = "Invalid username or password" });
 
-            var token = GenerateJwtToken(user);
-            return Ok(new { token, user = new { id = user.Id, username = user.Username, fullName = user.FullName, role = user.Role } });
+            if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+                return Unauthorized(new { message = "Invalid username or password" });
+
+            return Ok(new
+            {
+                token = GenerateJwtToken(user),
+                user = ToUserResponse(user)
+            });
         }
 
+        /* ================= SERVICE TOKEN ================= */
+
         /// <summary>
-        /// Tạo service token cho các service gọi lẫn nhau
-        /// POST /api/auth/service-token
+        /// Dùng cho service gọi service (SOA internal)
         /// </summary>
         [HttpPost("service-token")]
-        public IActionResult GetServiceToken([FromBody] ServiceTokenRequest request)
+        public IActionResult GetServiceToken(ServiceTokenRequest req)
         {
-            // Kiểm tra service key (có thể lưu trong config)
-            var validServiceKey = _config["ServiceKey"] ?? "ServiceKey123!";
-            if (request.ServiceKey != validServiceKey)
-            {
+            var serviceKey = _config["ServiceKey"];
+            if (req.ServiceKey != serviceKey)
                 return Unauthorized(new { message = "Invalid service key" });
-            }
 
-            // Tạo service user token
             var serviceUser = new User
             {
                 Id = 0,
                 Username = "ServiceAccount",
-                Role = "Service",
-                FullName = "Service Account"
+                FullName = "Service Account",
+                Role = "Service"
             };
 
-            var token = GenerateJwtToken(serviceUser);
-            return Ok(new { token });
+            return Ok(new { token = GenerateJwtToken(serviceUser) });
         }
+
+        /* ================= HELPER ================= */
 
         private string GenerateJwtToken(User user)
         {
             var jwt = _config.GetSection("Jwt");
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]!));
 
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.Role, user.Role),
-                new Claim("FullName", user.FullName)
+                new Claim("FullName", user.FullName ?? "")
             };
 
             var token = new JwtSecurityToken(
                 issuer: jwt["Issuer"],
                 audience: jwt["Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(double.Parse(jwt["ExpireMinutes"])),
-                signingCredentials: creds
+                expires: DateTime.UtcNow.AddMinutes(double.Parse(jwt["ExpireMinutes"]!)),
+                signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        private static UserResponseDto ToUserResponse(User u)
+        {
+            return new UserResponseDto
+            {
+                Id = u.Id,
+                Username = u.Username,
+                FullName = u.FullName,
+                Role = u.Role,
+                IsActive = u.IsActive
+            };
         }
     }
 

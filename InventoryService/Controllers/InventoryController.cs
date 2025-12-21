@@ -9,121 +9,113 @@ namespace InventoryService.Controllers
     [Route("api/inventory")]
     public class InventoryController : ControllerBase
     {
-        private readonly InventoryDbContext _context;
+        private readonly InventoryDbContext _db;
 
-        public InventoryController(InventoryDbContext context)
+        public InventoryController(InventoryDbContext db)
         {
-            _context = context;
+            _db = db;
         }
 
-        // ✅ Nhập kho (SupplierService gọi)
-        [HttpPost("import")]
-        public async Task<IActionResult> ImportStock([FromBody] ImportStockRequest request)
-        {
-            if (request.DrugId <= 0)
-            {
-                return BadRequest("DrugId không hợp lệ");
-            }
-            if (request.Quantity <= 0)
-            {
-                return BadRequest("Quantity phải > 0");
-            }
+        /* ================= IMPORT ================= */
+        // SupplierService gọi
 
-            var item = await _context.InventoryItems
-                .FirstOrDefaultAsync(i =>
-                    i.DrugId == request.DrugId &&
-                    i.ExpiryDate == request.ExpiryDate);
+        [HttpPost("import")]
+        public async Task<IActionResult> Import(ImportStockRequest req)
+        {
+            if (req.DrugId <= 0 || req.Quantity <= 0)
+                return BadRequest("Invalid DrugId or Quantity");
+
+            var item = await _db.InventoryItems.FirstOrDefaultAsync(x =>
+                x.DrugId == req.DrugId &&
+                x.ExpiryDate == req.ExpiryDate);
 
             if (item == null)
             {
                 item = new InventoryItem
                 {
-                    DrugId = request.DrugId,
-                    Quantity = request.Quantity,
-                    ExpiryDate = request.ExpiryDate
+                    DrugId = req.DrugId,
+                    Quantity = req.Quantity,
+                    ExpiryDate = req.ExpiryDate
                 };
-                _context.InventoryItems.Add(item);
+                _db.InventoryItems.Add(item);
             }
             else
             {
-                item.Quantity += request.Quantity;
+                item.Quantity += req.Quantity;
             }
 
-            _context.StockTransactions.Add(new StockTransaction
+            _db.StockTransactions.Add(new StockTransaction
             {
-                DrugId = request.DrugId,
-                Quantity = request.Quantity,
+                DrugId = req.DrugId,
+                Quantity = req.Quantity,
                 Type = "IMPORT",
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             });
 
-            await _context.SaveChangesAsync();
-            return Ok("Nhập kho thành công");
+            await _db.SaveChangesAsync();
+            return Ok("Import success");
         }
 
-        // ✅ Xuất kho (SaleService gọi)
+        /* ================= EXPORT ================= */
+        // SaleService gọi
+
         [HttpPost("export")]
-        public async Task<IActionResult> ExportStock([FromBody] ExportStockRequest request)
+        public async Task<IActionResult> Export(ExportStockRequest req)
         {
-            if (request.DrugId <= 0)
-            {
-                return BadRequest("DrugId không hợp lệ");
-            }
-            if (request.Quantity <= 0)
-            {
-                return BadRequest("Quantity phải > 0");
-            }
+            if (req.DrugId <= 0 || req.Quantity <= 0)
+                return BadRequest("Invalid DrugId or Quantity");
 
-            var drugId = request.DrugId;
-            var quantity = request.Quantity;
-
-            var items = await _context.InventoryItems
-                .Where(i => i.DrugId == drugId && i.Quantity > 0)
-                .OrderBy(i => i.ExpiryDate)
+            var items = await _db.InventoryItems
+                .Where(x => x.DrugId == req.DrugId && x.Quantity > 0)
+                .OrderBy(x => x.ExpiryDate)
                 .ToListAsync();
 
-            int remain = quantity;
+            int remain = req.Quantity;
 
-            foreach (var item in items)
+            foreach (var i in items)
             {
                 if (remain == 0) break;
 
-                var used = Math.Min(item.Quantity, remain);
-                item.Quantity -= used;
+                var used = Math.Min(i.Quantity, remain);
+                i.Quantity -= used;
                 remain -= used;
             }
 
             if (remain > 0)
-                return BadRequest("Không đủ tồn kho");
+                return BadRequest("Not enough stock");
 
-            _context.StockTransactions.Add(new StockTransaction
+            _db.StockTransactions.Add(new StockTransaction
             {
-                DrugId = drugId,
-                Quantity = -quantity,
+                DrugId = req.DrugId,
+                Quantity = -req.Quantity,
                 Type = "EXPORT",
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             });
 
-            await _context.SaveChangesAsync();
-            return Ok("Xuất kho thành công");
+            await _db.SaveChangesAsync();
+            return Ok("Export success");
         }
 
-        // ✅ Cảnh báo sắp hết hạn
-        [HttpGet("expiry-warning")]
-        public IActionResult ExpiryWarning()
-        {
-            var warning = _context.InventoryItems
-                .Where(i => i.ExpiryDate <= DateTime.Now.AddDays(30))
-                .ToList();
+        /* ================= STATUS ================= */
 
-            return Ok(warning);
-        }
-
-        // ✅ Tồn kho hiện tại
         [HttpGet("status")]
-        public IActionResult InventoryStatus()
+        public async Task<IActionResult> Status()
         {
-            return Ok(_context.InventoryItems.ToList());
+            return Ok(await _db.InventoryItems.ToListAsync());
+        }
+
+        /* ================= EXPIRY WARNING ================= */
+
+        [HttpGet("expiry-warning")]
+        public async Task<IActionResult> ExpiryWarning()
+        {
+            var soon = DateTime.UtcNow.AddDays(30);
+
+            var items = await _db.InventoryItems
+                .Where(x => x.ExpiryDate <= soon)
+                .ToListAsync();
+
+            return Ok(items);
         }
     }
 }

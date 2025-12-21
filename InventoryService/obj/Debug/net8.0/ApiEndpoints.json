@@ -11,14 +11,14 @@
   },
   {
     "ContainingType": "InventoryService.Controllers.InventoryController",
-    "Method": "ExportStock",
+    "Method": "Export",
     "RelativePath": "api/inventory/export",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
+        "Name": "req",
         "Type": "InventoryService.Models.ExportStockRequest",
         "IsRequired": true
       }
@@ -27,14 +27,14 @@
   },
   {
     "ContainingType": "InventoryService.Controllers.InventoryController",
-    "Method": "ImportStock",
+    "Method": "Import",
     "RelativePath": "api/inventory/import",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
+        "Name": "req",
         "Type": "InventoryService.Models.ImportStockRequest",
         "IsRequired": true
       }
@@ -43,7 +43,7 @@
   },
   {
     "ContainingType": "InventoryService.Controllers.InventoryController",
-    "Method": "InventoryStatus",
+    "Method": "Status",
     "RelativePath": "api/inventory/status",
     "HttpMethod": "GET",
     "IsController": true,

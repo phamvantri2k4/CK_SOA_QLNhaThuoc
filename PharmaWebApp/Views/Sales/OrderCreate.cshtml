@@ -3,6 +3,12 @@
     var drugs = ViewBag.Drugs as List<PharmaWebApp.Models.DrugViewModel>;
     var stockByDrugId = ViewBag.StockByDrugId as Dictionary<int, int> ?? new Dictionary<int, int>();
     var categories = ViewBag.Categories as List<string> ?? new List<string>();
+    
+    // Helper function for Vietnamese number formatting
+    string FormatVND(decimal amount)
+    {
+        return amount.ToString("N0", new System.Globalization.CultureInfo("vi-VN"));
+    }
 }
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -87,9 +93,9 @@
     .cart-sidebar {
         position: fixed;
         right: -300px;
-        top: 0;
+        top: 70px;
         width: 300px;
-        height: 100vh;
+        height: calc(100vh - 70px);
         background: white;
         box-shadow: -4px 0 12px rgba(0,0,0,0.1);
         transition: right 0.3s ease;
@@ -377,22 +383,21 @@
                                     <span class="badge bg-light text-dark">@drug.Category</span>
                                 </p>
                                 <div class="d-flex flex-column align-items-center gap-1">
-                                    @if (drug.SellPrice > 0)
-                                    {
-                                        <span class="price-tag">Lẻ: @drug.SellPrice.ToString("N0") đ / @drug.Unit</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted" style="font-size: 11px;">Không bán lẻ</span>
-                                    }
-
                                     @if (drug.BoxPrice > 0)
                                     {
-                                        <span class="price-tag secondary">Hộp: @drug.BoxPrice.ToString("N0") đ / hộp (@drug.PackSize @drug.Unit)</span>
+                                        <div class="fw-bold">
+                                            @FormatVND(drug.BoxPrice) / Hộp
+                                        </div>
+                                    }
+                                    @if (drug.SellPricePerPill > 0)
+                                    {
+                                        <div class="text-muted small">
+                                            @FormatVND(drug.SellPricePerPill) / viên
+                                        </div>
                                     }
                                     else
                                     {
-                                        <span class="text-muted" style="font-size: 11px;">Không bán theo hộp</span>
+                                        <div class="text-muted" style="font-size: 11px;">Không có giá lẻ viên</div>
                                     }
                                 </div>
 
@@ -515,7 +520,7 @@
         (drugs ?? new List<PharmaWebApp.Models.DrugViewModel>()).Select(d => new {
             id = d.Id,
             name = d.Name,
-            sellPrice = d.SellPrice,
+            sellPrice = d.SellPricePerPill,
             boxPrice = d.BoxPrice,
             imageUrl = d.ImageUrl,
             packSize = d.PackSize,
@@ -546,14 +551,33 @@
             const matchCat = !category || cat === category;
             const matchStock = !inStockOnly || inStock;
 
-            const show = matchText && matchCat && matchStock;
-            col.style.display = show ? '' : 'none';
-            if (show) visibleCount++;
+            const shouldShow = matchText && matchCat && matchStock;
+            col.style.display = shouldShow ? '' : 'none';
+            if (shouldShow) visibleCount++;
         });
+
+        // Sync UI controls with filter state
+        syncUIWithFilterState();
 
         const countEl = document.getElementById('drugFilterCount');
         if (countEl) {
             countEl.textContent = `Hiển thị ${visibleCount} / ${cols.length}`;
+        }
+    }
+
+    function syncUIWithFilterState() {
+        const searchInput = document.getElementById('drugSearchInput');
+        const categorySelect = document.getElementById('categoryFilter');
+        const inStockSwitch = document.getElementById('inStockSwitch');
+
+        if (searchInput && searchInput.value !== filterState.q) {
+            searchInput.value = filterState.q;
+        }
+        if (categorySelect && categorySelect.value !== filterState.category) {
+            categorySelect.value = filterState.category;
+        }
+        if (inStockSwitch && inStockSwitch.checked !== filterState.inStockOnly) {
+            inStockSwitch.checked = filterState.inStockOnly;
         }
     }
 
@@ -980,10 +1004,15 @@
                 try {
                     const errorText = await response.text();
                     console.error('Error response:', errorText);
-                    const errorJson = JSON.parse(errorText);
-                    errorMessage = errorJson.message || errorText;
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        errorMessage = errorJson.message || errorText;
+                    } catch (parseError) {
+                        errorMessage = errorText;
+                    }
                 } catch (e) {
-                    errorMessage = await response.text();
+                    console.error('Failed to read error response:', e);
+                    errorMessage = 'Không thể đọc thông báo lỗi từ server';
                 }
                 showNotification('Lỗi tạo đơn', errorMessage, 'error');
                 if (btn) {

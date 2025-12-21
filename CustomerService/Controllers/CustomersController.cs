@@ -5,468 +5,181 @@ using CustomerService.Data;
 using CustomerService.Models;
 using System.Net.Http.Json;
 
-namespace CustomerService.Controllers
+namespace CustomerService.Controllers;
+
+[ApiController]
+[Route("api/customers")]
+[Authorize]
+public class CustomersController : ControllerBase
 {
-    /// <summary>
-    /// Controller quản lý khách hàng
-    /// </summary>
-    [ApiController]
-    [Route("api/[controller]")]
-    [Authorize]
-    public class CustomersController : ControllerBase
+    private readonly CustomerDbContext _db;
+    private readonly IHttpClientFactory _http;
+    private readonly IConfiguration _cfg;
+    private readonly ILogger<CustomersController> _log;
+
+    public CustomersController(CustomerDbContext db, IHttpClientFactory http,
+        IConfiguration cfg, ILogger<CustomersController> log)
     {
-        private readonly CustomerDbContext _context;
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IConfiguration _configuration;
-        private readonly ILogger<CustomersController> _logger;
-
-        public CustomersController(
-            CustomerDbContext context,
-            IHttpClientFactory httpClientFactory,
-            IConfiguration configuration,
-            ILogger<CustomersController> logger)
-        {
-            _context = context;
-            _httpClientFactory = httpClientFactory;
-            _configuration = configuration;
-            _logger = logger;
-        }
-
-        /// <summary>
-        /// Lấy danh sách tất cả khách hàng
-        /// GET /api/customers
-        /// </summary>
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Customer>>> GetCustomers()
-        {
-            try
-            {
-                var customers = await _context.Customers.ToListAsync();
-                return Ok(customers);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi lấy danh sách khách hàng: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi lấy danh sách khách hàng" });
-            }
-        }
-
-        /// <summary>
-        /// Lấy thông tin khách hàng theo ID
-        /// GET /api/customers/{id}
-        /// </summary>
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Customer>> GetCustomer(int id)
-        {
-            try
-            {
-                var customer = await _context.Customers.FindAsync(id);
-
-                if (customer == null)
-                {
-                    _logger.LogWarning($"Không tìm thấy khách hàng với ID: {id}");
-                    return NotFound(new { message = $"Không tìm thấy khách hàng với ID: {id}" });
-                }
-
-                return Ok(customer);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi lấy thông tin khách hàng ID {id}: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi lấy thông tin khách hàng" });
-            }
-        }
-
-        /// <summary>
-        /// Tìm khách hàng theo số điện thoại
-        /// GET /api/customers/search?phone={phone}
-        /// </summary>
-        [HttpGet("search")]
-        public async Task<ActionResult<Customer>> SearchCustomerByPhone([FromQuery] string phone)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(phone))
-                {
-                    return BadRequest(new { message = "Số điện thoại không được để trống" });
-                }
-
-                var customer = await _context.Customers
-                    .FirstOrDefaultAsync(c => c.Phone == phone.Trim());
-
-                if (customer == null)
-                {
-                    return NotFound(new { message = $"Không tìm thấy khách hàng với số điện thoại: {phone}" });
-                }
-
-                return Ok(customer);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi tìm khách hàng theo SĐT {phone}: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi tìm khách hàng" });
-            }
-        }
-
-        /// <summary>
-        /// Tìm hoặc tạo khách hàng mới theo tên và số điện thoại
-        /// Nếu đã có khách hàng với SĐT này thì trả về (KHÔNG tạo mới), nếu chưa thì tạo mới
-        /// POST /api/customers/find-or-create
-        /// </summary>
-        [HttpPost("find-or-create")]
-        public async Task<ActionResult<Customer>> FindOrCreateCustomer([FromBody] FindOrCreateCustomerRequest request)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.Name))
-                {
-                    return BadRequest(new { message = "Tên khách hàng không được để trống" });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.Phone))
-                {
-                    return BadRequest(new { message = "Số điện thoại không được để trống" });
-                }
-
-                var phoneTrimmed = request.Phone.Trim();
-                var nameTrimmed = request.Name.Trim();
-
-                // Tìm khách hàng theo số điện thoại (không phân biệt hoa thường, trim)
-                var existingCustomer = await _context.Customers
-                    .FirstOrDefaultAsync(c => c.Phone.Trim() == phoneTrimmed);
-
-                if (existingCustomer != null)
-                {
-                    // Nếu đã có khách hàng với SĐT này → KHÔNG tạo mới, chỉ trả về khách hàng đã có
-                    _logger.LogInformation($"Tìm thấy khách hàng đã tồn tại: {existingCustomer.Name} - {existingCustomer.Phone} (ID: {existingCustomer.Id}). Không tạo mới.");
-                    
-                    // Cập nhật tên nếu khác (có thể khách hàng đổi tên)
-                    if (existingCustomer.Name.Trim() != nameTrimmed)
-                    {
-                        var oldName = existingCustomer.Name;
-                        existingCustomer.Name = nameTrimmed;
-                        await _context.SaveChangesAsync();
-                        _logger.LogInformation($"Cập nhật tên khách hàng ID {existingCustomer.Id}: '{oldName}' → '{nameTrimmed}'");
-                    }
-                    
-                    return Ok(existingCustomer);
-                }
-
-                // Nếu chưa có khách hàng với SĐT này → Tạo mới
-                var newCustomer = new Customer
-                {
-                    Name = nameTrimmed,
-                    Phone = phoneTrimmed
-                };
-
-                _context.Customers.Add(newCustomer);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation($"Tạo mới khách hàng: {newCustomer.Name} - {newCustomer.Phone} (ID: {newCustomer.Id})");
-                return CreatedAtAction(nameof(GetCustomer), new { id = newCustomer.Id }, newCustomer);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi tìm/tạo khách hàng: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi tìm/tạo khách hàng" });
-            }
-        }
-
-        /// <summary>
-        /// Tạo khách hàng mới
-        /// POST /api/customers
-        /// </summary>
-        [HttpPost]
-        public async Task<ActionResult<Customer>> CreateCustomer([FromBody] CreateCustomerRequest request)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.Name))
-                {
-                    return BadRequest(new { message = "Tên khách hàng không được để trống" });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.Phone))
-                {
-                    return BadRequest(new { message = "Số điện thoại không được để trống" });
-                }
-
-                // Kiểm tra số điện thoại đã tồn tại chưa
-                var existingCustomer = await _context.Customers
-                    .FirstOrDefaultAsync(c => c.Phone == request.Phone.Trim());
-
-                if (existingCustomer != null)
-                {
-                    return Conflict(new { message = $"Số điện thoại {request.Phone} đã được sử dụng bởi khách hàng khác" });
-                }
-
-                var customer = new Customer
-                {
-                    Name = request.Name.Trim(),
-                    Phone = request.Phone.Trim()
-                };
-
-                _context.Customers.Add(customer);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation($"Tạo mới khách hàng: {customer.Name} - {customer.Phone} (ID: {customer.Id})");
-                return CreatedAtAction(nameof(GetCustomer), new { id = customer.Id }, customer);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi tạo khách hàng: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi tạo khách hàng" });
-            }
-        }
-
-        /// <summary>
-        /// Cập nhật thông tin khách hàng
-        /// PUT /api/customers/{id}
-        /// </summary>
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCustomer(int id, [FromBody] UpdateCustomerRequest request)
-        {
-            try
-            {
-                var customer = await _context.Customers.FindAsync(id);
-
-                if (customer == null)
-                {
-                    return NotFound(new { message = $"Không tìm thấy khách hàng với ID: {id}" });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.Name))
-                {
-                    return BadRequest(new { message = "Tên khách hàng không được để trống" });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.Phone))
-                {
-                    return BadRequest(new { message = "Số điện thoại không được để trống" });
-                }
-
-                // Kiểm tra số điện thoại đã được sử dụng bởi khách hàng khác chưa
-                var existingCustomer = await _context.Customers
-                    .FirstOrDefaultAsync(c => c.Phone == request.Phone.Trim() && c.Id != id);
-
-                if (existingCustomer != null)
-                {
-                    return Conflict(new { message = $"Số điện thoại {request.Phone} đã được sử dụng bởi khách hàng khác" });
-                }
-
-                customer.Name = request.Name.Trim();
-                customer.Phone = request.Phone.Trim();
-
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation($"Cập nhật khách hàng ID {id}: {customer.Name} - {customer.Phone}");
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi cập nhật khách hàng ID {id}: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi cập nhật khách hàng" });
-            }
-        }
-
-        /// <summary>
-        /// Xóa khách hàng
-        /// DELETE /api/customers/{id}
-        /// </summary>
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCustomer(int id)
-        {
-            try
-            {
-                var customer = await _context.Customers.FindAsync(id);
-
-                if (customer == null)
-                {
-                    return NotFound(new { message = $"Không tìm thấy khách hàng với ID: {id}" });
-                }
-
-                _context.Customers.Remove(customer);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation($"Xóa khách hàng ID {id}: {customer.Name} - {customer.Phone}");
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi xóa khách hàng ID {id}: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi xóa khách hàng" });
-            }
-        }
-
-        /// <summary>
-        /// Lấy lịch sử mua hàng của khách hàng
-        /// GET /api/customers/{id}/purchase-history
-        /// </summary>
-        [HttpGet("{id}/purchase-history")]
-        public async Task<ActionResult<IEnumerable<PurchaseHistoryItem>>> GetPurchaseHistory(int id)
-        {
-            try
-            {
-                // Kiểm tra khách hàng có tồn tại không
-                var customer = await _context.Customers.FindAsync(id);
-                if (customer == null)
-                {
-                    return NotFound(new { message = $"Không tìm thấy khách hàng với ID: {id}" });
-                }
-
-                // Gọi SaleService để lấy danh sách hóa đơn
-                var saleServiceUrl = _configuration["SaleService:BaseUrl"] ?? "http://localhost:5002";
-                var authServiceUrl = _configuration["AuthService:BaseUrl"] ?? "http://localhost:5004";
-                var httpClient = _httpClientFactory.CreateClient();
-
-                // Lấy service token để gọi SaleService
-                var serviceToken = await GetServiceTokenAsync(httpClient, authServiceUrl);
-                if (!string.IsNullOrEmpty(serviceToken))
-                {
-                    httpClient.DefaultRequestHeaders.Authorization = 
-                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", serviceToken);
-                }
-
-                _logger.LogInformation($"Gọi SaleService để lấy lịch sử mua hàng của khách hàng ID {id} tại {saleServiceUrl}");
-
-                var response = await httpClient.GetAsync($"{saleServiceUrl}/api/sales");
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogWarning($"Không thể lấy danh sách hóa đơn từ SaleService. Status: {response.StatusCode}");
-                    return StatusCode(500, new { message = "Không thể lấy lịch sử mua hàng từ SaleService" });
-                }
-
-                var allSales = await response.Content.ReadFromJsonAsync<List<SaleInvoiceDto>>();
-                
-                if (allSales == null)
-                {
-                    return Ok(new List<PurchaseHistoryItem>());
-                }
-
-                // Lọc hóa đơn theo CustomerId
-                var customerSales = allSales
-                    .Where(s => s.CustomerId == id)
-                    .OrderByDescending(s => s.CreatedAt)
-                    .Select(s => new PurchaseHistoryItem
-                    {
-                        InvoiceId = s.Id,
-                        CreatedAt = s.CreatedAt,
-                        TotalAmount = s.TotalAmount,
-                        ItemCount = s.Items?.Count ?? 0,
-                        Items = s.Items?.Select(i => new PurchaseHistoryItemDetail
-                        {
-                            DrugId = i.DrugId,
-                            DrugName = i.DrugName,
-                            Quantity = i.Quantity,
-                            UnitPrice = i.UnitPrice,
-                            LineTotal = i.LineTotal
-                        }).ToList() ?? new List<PurchaseHistoryItemDetail>()
-                    })
-                    .ToList();
-
-                _logger.LogInformation($"Tìm thấy {customerSales.Count} hóa đơn của khách hàng ID {id}");
-                return Ok(customerSales);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi lấy lịch sử mua hàng của khách hàng ID {id}: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi lấy lịch sử mua hàng" });
-            }
-        }
-
-        /// <summary>
-        /// Helper method để lấy service token từ AuthService
-        /// </summary>
-        private static string? _cachedServiceToken;
-        private static DateTime _serviceTokenExpiry = DateTime.MinValue;
-        private const string ServiceKey = "ServiceKey123!";
-
-        private async Task<string?> GetServiceTokenAsync(HttpClient httpClient, string authServiceUrl)
-        {
-            // Nếu token còn hiệu lực, dùng lại
-            if (!string.IsNullOrEmpty(_cachedServiceToken) && DateTime.UtcNow < _serviceTokenExpiry)
-            {
-                return _cachedServiceToken;
-            }
-
-            try
-            {
-                var request = new { ServiceKey = ServiceKey };
-                var response = await httpClient.PostAsJsonAsync($"{authServiceUrl}/api/auth/service-token", request);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-                    _cachedServiceToken = result.GetProperty("token").GetString();
-                    _serviceTokenExpiry = DateTime.UtcNow.AddHours(23); // Token hết hạn sau 23 giờ
-                    return _cachedServiceToken;
-                }
-            }
-            catch
-            {
-                // Log error nếu cần
-            }
-
-            return null;
-        }
+        _db = db; _http = http; _cfg = cfg; _log = log;
     }
 
-    // DTOs
-    public class CreateCustomerRequest
+    /* ===== CRUD ===== */
+
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+        => Ok(await _db.Customers.ToListAsync());
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> Get(int id)
+        => await _db.Customers.FindAsync(id) is Customer c ? Ok(c) : NotFound();
+
+    [HttpPost]
+    public async Task<IActionResult> Create(CustomerReq r)
     {
-        public string Name { get; set; } = string.Empty;
-        public string Phone { get; set; } = string.Empty;
+        if (string.IsNullOrWhiteSpace(r.Name) || string.IsNullOrWhiteSpace(r.Phone))
+            return BadRequest("Name & Phone required");
+
+        if (await _db.Customers.AnyAsync(x => x.Phone == r.Phone.Trim()))
+            return Conflict("Phone exists");
+
+        var c = new Customer { Name = r.Name.Trim(), Phone = r.Phone.Trim() };
+        _db.Customers.Add(c);
+        await _db.SaveChangesAsync();
+        return CreatedAtAction(nameof(Get), new { id = c.Id }, c);
     }
 
-    public class UpdateCustomerRequest
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, CustomerReq r)
     {
-        public string Name { get; set; } = string.Empty;
-        public string Phone { get; set; } = string.Empty;
+        var c = await _db.Customers.FindAsync(id);
+        if (c == null) return NotFound();
+
+        if (await _db.Customers.AnyAsync(x => x.Phone == r.Phone.Trim() && x.Id != id))
+            return Conflict("Phone exists");
+
+        c.Name = r.Name.Trim();
+        c.Phone = r.Phone.Trim();
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 
-    public class FindOrCreateCustomerRequest
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
     {
-        public string Name { get; set; } = string.Empty;
-        public string Phone { get; set; } = string.Empty;
+        var c = await _db.Customers.FindAsync(id);
+        if (c == null) return NotFound();
+        _db.Customers.Remove(c);
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 
-    // DTOs cho lịch sử mua hàng
-    public class SaleInvoiceDto
+    /* ===== FIND OR CREATE ===== */
+
+    [HttpPost("find-or-create")]
+    public async Task<IActionResult> FindOrCreate(CustomerReq r)
     {
-        public int Id { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public int? CustomerId { get; set; }
-        public int StaffId { get; set; }
-        public decimal TotalAmount { get; set; }
-        public List<SaleItemDto>? Items { get; set; }
+        var phone = r.Phone.Trim();
+        var c = await _db.Customers.FirstOrDefaultAsync(x => x.Phone == phone);
+        if (c != null)
+        {
+            if (c.Name != r.Name.Trim())
+            {
+                c.Name = r.Name.Trim();
+                await _db.SaveChangesAsync();
+            }
+            return Ok(c);
+        }
+
+        c = new Customer { Name = r.Name.Trim(), Phone = phone };
+        _db.Customers.Add(c);
+        await _db.SaveChangesAsync();
+        return CreatedAtAction(nameof(Get), new { id = c.Id }, c);
     }
 
-    public class SaleItemDto
-    {
-        public int DrugId { get; set; }
-        public string DrugName { get; set; } = string.Empty;
-        public int Quantity { get; set; }
-        public decimal UnitPrice { get; set; }
-        public decimal LineTotal { get; set; }
-    }
+    /* ===== PURCHASE HISTORY ===== */
 
-    public class PurchaseHistoryItem
+    [HttpGet("{id}/purchase-history")]
+    public async Task<IActionResult> History(int id)
     {
-        public int InvoiceId { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public decimal TotalAmount { get; set; }
-        public int ItemCount { get; set; }
-        public List<PurchaseHistoryItemDetail> Items { get; set; } = new();
-    }
+        if (!await _db.Customers.AnyAsync(x => x.Id == id))
+            return NotFound("Customer not found");
 
-    public class PurchaseHistoryItemDetail
-    {
-        public int DrugId { get; set; }
-        public string DrugName { get; set; } = string.Empty;
-        public int Quantity { get; set; }
-        public decimal UnitPrice { get; set; }
-        public decimal LineTotal { get; set; }
+        var data = await SaleHelper.GetHistory(_http, _cfg, _log, id);
+        return Ok(data);
     }
 }
 
+/* ===== SALE SERVICE HELPER ===== */
+
+static class SaleHelper
+{
+    static string? token;
+    static DateTime exp;
+    const string Key = "ServiceKey123!";
+
+    public static async Task<List<HistoryItem>> GetHistory(
+        IHttpClientFactory f, IConfiguration c, ILogger log, int cid)
+    {
+        try
+        {
+            var sale = c["SaleService:BaseUrl"];
+            var auth = c["AuthService:BaseUrl"];
+            if (sale == null || auth == null) return new();
+
+            var client = f.CreateClient();
+            client.DefaultRequestHeaders.Authorization =
+                new("Bearer", await GetToken(client, auth));
+
+            var r = await client.GetAsync($"{sale}/api/sales");
+            if (!r.IsSuccessStatusCode) return new();
+
+            var sales = await r.Content.ReadFromJsonAsync<List<SaleDto>>() ?? new();
+            return sales.Where(x => x.CustomerId == cid)
+                .OrderByDescending(x => x.CreatedAt)
+                .Select(x => new HistoryItem
+                {
+                    InvoiceId = x.Id,
+                    CreatedAt = x.CreatedAt,
+                    TotalAmount = x.TotalAmount,
+                    ItemCount = x.Items?.Count ?? 0
+                }).ToList();
+        }
+        catch (Exception e)
+        {
+            log.LogError(e.Message);
+            return new();
+        }
+    }
+
+    static async Task<string?> GetToken(HttpClient c, string auth)
+    {
+        if (!string.IsNullOrEmpty(token) && DateTime.UtcNow < exp) return token;
+        var r = await c.PostAsJsonAsync($"{auth}/api/auth/service-token", new { ServiceKey = Key });
+        if (!r.IsSuccessStatusCode) return null;
+        var j = await r.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        token = j.GetProperty("token").GetString();
+        exp = DateTime.UtcNow.AddHours(23);
+        return token;
+    }
+}
+
+/* ===== DTO ===== */
+
+public record CustomerReq(string Name, string Phone);
+
+class SaleDto
+{
+    public int Id { get; set; }
+    public int? CustomerId { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public decimal TotalAmount { get; set; }
+    public List<object>? Items { get; set; }
+}
+
+class HistoryItem
+{
+    public int InvoiceId { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public decimal TotalAmount { get; set; }
+    public int ItemCount { get; set; }
+}

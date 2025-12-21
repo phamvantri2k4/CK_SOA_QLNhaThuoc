@@ -1,4 +1,4 @@
-@model PharmaWebApp.Controllers.RegisterViewModel
+@model PharmaWebApp.Models.RegisterViewModel
 @{
     ViewData["Title"] = "Đăng ký";
     Layout = null;
@@ -20,102 +20,397 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px 0;
         }
+
         .register-container {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            padding: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
             width: 100%;
-            max-width: 450px;
+            max-width: 500px;
+            margin: 20px;
         }
+
         .register-header {
+            background: linear-gradient(135deg, var(--app-primary), var(--app-primary-700));
+            color: white;
+            padding: 40px 30px;
             text-align: center;
-            margin-bottom: 30px;
         }
-        .register-header h2 {
-            color: #667eea;
-            font-weight: bold;
-        }
-        .register-header i {
-            font-size: 48px;
-            color: #667eea;
+
+        .register-header h1 {
+            font-size: 28px;
+            font-weight: 700;
             margin-bottom: 10px;
+        }
+
+        .register-header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .register-body {
+            padding: 40px 30px;
+        }
+
+        .form-floating {
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e5e7eb;
+            padding: 12px 15px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--app-primary);
+            box-shadow: 0 0 0 0.2rem rgba(22, 163, 74, 0.25);
+        }
+
+        .btn-register {
+            background: linear-gradient(135deg, var(--app-primary), var(--app-primary-700));
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(22, 163, 74, 0.3);
+        }
+
+        .btn-register:active {
+            transform: translateY(0);
+        }
+
+        .form-check-input:checked {
+            background-color: var(--app-primary);
+            border-color: var(--app-primary);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 30px 0;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e5e7eb;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            color: #6b7280;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .login-link a {
+            color: var(--app-primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+        }
+
+        .password-strength {
+            margin-top: 5px;
+            font-size: 12px;
+        }
+
+        .strength-weak { color: #dc3545; }
+        .strength-medium { color: #ffc107; }
+        .strength-strong { color: #28a745; }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        @@keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @@keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .requirements {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .requirements h6 {
+            margin-bottom: 10px;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .requirements ul {
+            margin-bottom: 0;
+            padding-left: 20px;
+        }
+
+        .requirements li {
+            margin-bottom: 5px;
+            color: #6c757d;
+        }
+
+        .requirements li.valid {
+            color: #28a745;
+        }
+
+        .requirements li.invalid {
+            color: #dc3545;
         }
     </style>
 </head>
 <body>
-    <div class="register-container">
+    <div class="register-container fade-in">
         <div class="register-header">
-            <i class="bi bi-person-plus"></i>
-            <h2>Đăng ký tài khoản</h2>
-            <p class="text-muted">Pharmacity</p>
+            <i class="bi bi-person-plus" style="font-size: 48px; margin-bottom: 15px;"></i>
+            <h1>Đăng ký tài khoản</h1>
+            <p>Tạo tài khoản mới để quản lý nhà thuốc</p>
         </div>
 
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div class="alert alert-danger">
-                <ul class="mb-0">
-                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                    {
-                        <li>@error.ErrorMessage</li>
-                    }
-                </ul>
-            </div>
-        }
+        <div class="register-body">
+            @if (ViewData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>
+                    @ViewData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
 
-        <form asp-action="Register" method="post">
-            @Html.AntiForgeryToken()
+            <form asp-action="Register" method="post" id="registerForm">
+                @Html.AntiForgeryToken()
+                
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display: none;"></div>
 
-            <div class="mb-3">
-                <label asp-for="FullName" class="form-label">
-                    <i class="bi bi-person"></i> Họ và tên
-                </label>
-                <input asp-for="FullName" class="form-control" placeholder="Nhập họ và tên" />
-                <span asp-validation-for="FullName" class="text-danger"></span>
-            </div>
+                <div class="requirements">
+                    <h6><i class="bi bi-info-circle me-2"></i>Yêu cầu mật khẩu:</h6>
+                    <ul id="passwordRequirements">
+                        <li id="req-length">Ít nhất 6 ký tự</li>
+                        <li id="req-uppercase">Chứa chữ hoa (A-Z)</li>
+                        <li id="req-lowercase">Chứa chữ thường (a-z)</li>
+                        <li id="req-number">Chứa số (0-9)</li>
+                    </ul>
+                </div>
 
-            <div class="mb-3">
-                <label asp-for="Username" class="form-label">
-                    <i class="bi bi-person-badge"></i> Tên đăng nhập
-                </label>
-                <input asp-for="Username" class="form-control" placeholder="Nhập tên đăng nhập" />
-                <span asp-validation-for="Username" class="text-danger"></span>
-            </div>
+                <div class="form-floating">
+                    <input asp-for="FullName" class="form-control" placeholder="Họ tên" required />
+                    <label for="FullName">
+                        <i class="bi bi-person-badge me-2"></i>Họ tên đầy đủ
+                    </label>
+                    <span asp-validation-for="FullName" class="text-danger"></span>
+                </div>
 
-            <div class="mb-3">
-                <label asp-for="Password" class="form-label">
-                    <i class="bi bi-lock"></i> Mật khẩu
-                </label>
-                <input asp-for="Password" class="form-control" placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)" />
-                <span asp-validation-for="Password" class="text-danger"></span>
-            </div>
+                <div class="form-floating">
+                    <input asp-for="Username" class="form-control" placeholder="Tên đăng nhập" required />
+                    <label for="Username">
+                        <i class="bi bi-person me-2"></i>Tên đăng nhập
+                    </label>
+                    <span asp-validation-for="Username" class="text-danger"></span>
+                </div>
 
-            <div class="mb-3">
-                <label asp-for="ConfirmPassword" class="form-label">
-                    <i class="bi bi-lock-fill"></i> Xác nhận mật khẩu
-                </label>
-                <input asp-for="ConfirmPassword" class="form-control" placeholder="Nhập lại mật khẩu" />
-                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-            </div>
+                <div class="form-floating">
+                    <input asp-for="Password" type="password" class="form-control" placeholder="Mật khẩu" id="password" required />
+                    <label for="Password">
+                        <i class="bi bi-lock me-2"></i>Mật khẩu
+                    </label>
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                    <div class="password-strength" id="passwordStrength"></div>
+                </div>
 
-            <div class="d-grid">
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="bi bi-person-plus"></i> Đăng ký
+                <div class="form-floating">
+                    <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Xác nhận mật khẩu" id="confirmPassword" required />
+                    <label for="ConfirmPassword">
+                        <i class="bi bi-lock-fill me-2"></i>Xác nhận mật khẩu
+                    </label>
+                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                </div>
+
+                <div class="form-check mb-4">
+                    <input type="checkbox" class="form-check-input" id="agreeTerms" required />
+                    <label class="form-check-label" for="agreeTerms">
+                        Tôi đồng ý với <a href="#" class="text-primary">điều khoản sử dụng</a> và <a href="#" class="text-primary">chính sách bảo mật</a>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-register" id="submitBtn">
+                    <i class="bi bi-person-plus me-2"></i>
+                    Đăng ký tài khoản
                 </button>
+            </form>
+
+            <div class="divider">
+                <span>hoặc</span>
             </div>
 
-            <div class="text-center mt-3">
-                <small class="text-muted">
-                    Đã có tài khoản? <a asp-action="Login" class="text-primary">Đăng nhập ngay</a>
-                </small>
+            <div class="login-link">
+                <p class="mb-0">Đã có tài khoản? <a asp-action="Login">Đăng nhập ngay</a></p>
             </div>
-        </form>
+        </div>
     </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            // Kiểm tra độ mạnh mật khẩu
+            function checkPasswordStrength(password) {
+                let strength = 0;
+                let feedback = [];
+
+                if (password.length >= 6) {
+                    strength++;
+                    $('#req-length').removeClass('invalid').addClass('valid');
+                } else {
+                    $('#req-length').removeClass('valid').addClass('invalid');
+                }
+
+                if (/[A-Z]/.test(password)) {
+                    strength++;
+                    $('#req-uppercase').removeClass('invalid').addClass('valid');
+                } else {
+                    $('#req-uppercase').removeClass('valid').addClass('invalid');
+                }
+
+                if (/[a-z]/.test(password)) {
+                    strength++;
+                    $('#req-lowercase').removeClass('invalid').addClass('valid');
+                } else {
+                    $('#req-lowercase').removeClass('valid').addClass('invalid');
+                }
+
+                if (/[0-9]/.test(password)) {
+                    strength++;
+                    $('#req-number').removeClass('invalid').addClass('valid');
+                } else {
+                    $('#req-number').removeClass('valid').addClass('invalid');
+                }
+
+                let strengthText = '';
+                let strengthClass = '';
+
+                if (strength <= 1) {
+                    strengthText = 'Yếu';
+                    strengthClass = 'strength-weak';
+                } else if (strength <= 3) {
+                    strengthText = 'Trung bình';
+                    strengthClass = 'strength-medium';
+                } else {
+                    strengthText = 'Mạnh';
+                    strengthClass = 'strength-strong';
+                }
+
+                return { text: strengthText, class: strengthClass };
+            }
+
+            // Kiểm tra mật khẩu khi nhập
+            $('#password').on('input', function() {
+                const password = $(this).val();
+                const strength = checkPasswordStrength(password);
+                
+                $('#passwordStrength').removeClass('strength-weak strength-medium strength-strong')
+                    .addClass(strength.class)
+                    .text('Độ mạnh: ' + strength.text);
+
+                // Kiểm tra xác nhận mật khẩu
+                if ($('#confirmPassword').val()) {
+                    validatePasswordMatch();
+                }
+            });
+
+            // Kiểm tra xác nhận mật khẩu
+            function validatePasswordMatch() {
+                const password = $('#password').val();
+                const confirmPassword = $('#confirmPassword').val();
+                
+                if (confirmPassword && password !== confirmPassword) {
+                    $('#confirmPassword')[0].setCustomValidity('Mật khẩu xác nhận không khớp');
+                } else {
+                    $('#confirmPassword')[0].setCustomValidity('');
+                }
+            }
+
+            $('#confirmPassword').on('input', validatePasswordMatch);
+
+            // Xử lý validation summary
+            $('form').submit(function(e) {
+                if ($(this).find('.input-validation-error').length > 0) {
+                    $('.register-container').addClass('shake');
+                    setTimeout(function() {
+                        $('.register-container').removeClass('shake');
+                    }, 500);
+                }
+            });
+
+            // Hiển thị validation errors
+            if ($('.validation-summary-errors').length > 0) {
+                $('.validation-summary-errors').show();
+            }
+
+            // Focus vào input đầu tiên
+            $('input:visible:first').focus();
+
+            // Hiệu ứng hover cho button
+            $('.btn-register').hover(
+                function() {
+                    $(this).css('transform', 'translateY(-2px)');
+                },
+                function() {
+                    $(this).css('transform', 'translateY(0)');
+                }
+            );
+
+            // Khởi tạo requirements
+            $('#passwordRequirements li').addClass('invalid');
+        });
+    </script>
 </body>
 </html>
-

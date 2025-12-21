@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using ReportingService.Data;
+using ReportingService.Models;
 using Shared;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddDbContext<ReportingDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-// HttpClient để gọi ServiceRegistry
+// HttpClient để gọi ServiceRegistry và SaleService
 builder.Services.AddHttpClient();
 
 var app = builder.Build();

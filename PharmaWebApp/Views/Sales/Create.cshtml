@@ -1,6 +1,12 @@
 @{
     ViewData["Title"] = "Lập hóa đơn mới";
     var drugs = ViewBag.Drugs as List<PharmaWebApp.Models.DrugViewModel>;
+    
+    // Helper function for Vietnamese number formatting
+    string FormatVND(decimal amount)
+    {
+        return amount.ToString("N0", new System.Globalization.CultureInfo("vi-VN"));
+    }
 }
 
 <div class="container py-4">
@@ -48,8 +54,10 @@
                                     <option value="">-- Chọn thuốc --</option>
                                     @foreach (var drug in drugs)
                                     {
+                                        var displayPrice = drug.SellPricePerPill > 0 ? drug.SellPricePerPill : 0;
+                                        var displayUnit = drug.SellPricePerPill > 0 ? "viên" : drug.Unit;
                                         <option value="@drug.Id">
-                                            @drug.Name (@drug.Code) - @drug.SellPrice.ToString("N0") VNĐ/@drug.Unit
+                                            @drug.Name (@drug.Code) - @FormatVND(displayPrice) VNĐ/@displayUnit
                                         </option>
                                     }
                                 </select>

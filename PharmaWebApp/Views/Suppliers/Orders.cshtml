@@ -3,21 +3,24 @@
     ViewData["Title"] = "Đơn nhập";
 }
 
-<div class="py-2">
+<div class="container-fluid py-2">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
-            <div class="app-page-title"><i class="bi bi-receipt"></i> Đơn nhập</div>
+            <div class="app-page-title"><i class="bi bi-receipt"></i> @ViewData["Title"]</div>
             <div class="text-muted">Danh sách đơn nhập hàng từ nhà cung cấp</div>
         </div>
         <div class="d-flex gap-2">
-            <a class="btn btn-outline-secondary" asp-action="Index"><i class="bi bi-arrow-left"></i> NCC</a>
+            <a class="btn btn-outline-secondary" asp-action="Index"><i class="bi bi-building"></i> NCC</a>
             <a class="btn btn-success" asp-action="CreateOrder"><i class="bi bi-plus-circle"></i> Tạo đơn nhập</a>
         </div>
     </div>
 
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     }
 
     @if (ViewBag.ErrorMessage != null)
@@ -31,34 +34,35 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>Mã đơn</th>
                             <th>Nhà cung cấp</th>
                             <th>Ngày tạo</th>
-                            <th></th>
+                            <th class="text-end" style="width: 160px;">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>
-                @if (Model.Count == 0)
-                {
-                    <tr><td colspan="4" class="text-center text-muted py-3">Chưa có đơn nhập</td></tr>
-                }
-                else
-                {
-                    foreach (var o in Model)
-                    {
-                        <tr>
-                            <td>#@o.Id</td>
-                            <td>
-                                <div><strong>@(string.IsNullOrWhiteSpace(o.SupplierName) ? $"NCC #{o.SupplierId}" : o.SupplierName)</strong></div>
-                                <div class="text-muted small">ID: @o.SupplierId</div>
-                            </td>
-                            <td>@o.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td class="text-end">
-                                <a class="btn btn-sm btn-outline-primary" asp-action="OrderDetails" asp-route-id="@o.Id">Chi tiết</a>
-                            </td>
-                        </tr>
-                    }
-                }
+                        @if (Model == null || Model.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">Chưa có đơn nhập</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var o in Model)
+                            {
+                                <tr>
+                                    <td><strong>#@o.Id</strong></td>
+                                    <td>@(string.IsNullOrWhiteSpace(o.SupplierName) ? $"NCC #{o.SupplierId}" : o.SupplierName)</td>
+                                    <td>@o.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td class="text-end">
+                                        <a class="btn btn-sm btn-outline-primary" asp-action="OrderDetails" asp-route-id="@o.Id">
+                                            <i class="bi bi-eye"></i> Chi tiết
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
                     </tbody>
                 </table>
             </div>

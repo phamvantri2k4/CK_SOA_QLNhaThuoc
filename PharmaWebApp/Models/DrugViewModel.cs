@@ -11,9 +11,9 @@ namespace PharmaWebApp.Models
         public string Category { get; set; } = string.Empty;
         public string Unit { get; set; } = string.Empty;
         public int PackSize { get; set; } = 1;
-        public decimal ImportPrice { get; set; }
-        public decimal SellPrice { get; set; }
-        public decimal BoxPrice { get; set; }
+        public int ImportPrice { get; set; }
+        public int BoxPrice { get; set; }
+        public int SellPricePerPill { get; set; }
         public string? ImageUrl { get; set; }
     }
 
@@ -28,9 +28,9 @@ namespace PharmaWebApp.Models
         public string Category { get; set; } = string.Empty;
         public string Unit { get; set; } = string.Empty;
         public int PackSize { get; set; } = 1;
-        public decimal ImportPrice { get; set; }
-        public decimal SellPrice { get; set; }
-        public decimal BoxPrice { get; set; }
+        public int ImportPrice { get; set; }
+        public int BoxPrice { get; set; }
+        public int SellPricePerPill { get; set; }
         public string? ImageUrl { get; set; }
         
         // File upload từ máy (không bắt buộc khi edit)

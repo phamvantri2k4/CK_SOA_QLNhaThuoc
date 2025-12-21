@@ -1,208 +1,96 @@
+using DrugService.Data;
+using DrugService.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using DrugService.Data;
-using DrugService.Models;
 
 namespace DrugService.Controllers
 {
-    /// <summary>
-    /// Controller quản lý thông tin thuốc (Drug)
-    /// Cung cấp các API CRUD cơ bản cho Drug
-    /// </summary>
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/drugs")]
     [Authorize]
     public class DrugsController : ControllerBase
     {
-        private readonly DrugDbContext _context;
-        private readonly ILogger<DrugsController> _logger;
+        private readonly DrugDbContext _db;
 
-        public DrugsController(DrugDbContext context, ILogger<DrugsController> logger)
+        public DrugsController(DrugDbContext db)
         {
-            _context = context;
-            _logger = logger;
+            _db = db;
         }
 
-        /// <summary>
-        /// Lấy danh sách tất cả các thuốc
-        /// GET /api/drugs
-        /// </summary>
+        // GET: api/drugs
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Drug>>> GetDrugs()
+        public async Task<IActionResult> GetAll()
         {
-            try
-            {
-                var drugs = await _context.Drugs.ToListAsync();
-                _logger.LogInformation($"Trả về danh sách {drugs.Count} thuốc");
-                return Ok(drugs);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi lấy danh sách thuốc: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi lấy danh sách thuốc" });
-            }
+            var drugs = await _db.Drugs.ToListAsync();
+            return Ok(drugs);
         }
 
-        /// <summary>
-        /// Lấy thông tin chi tiết một thuốc theo ID
-        /// GET /api/drugs/{id}
-        /// </summary>
+        // GET: api/drugs/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Drug>> GetDrug(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            try
-            {
-                var drug = await _context.Drugs.FindAsync(id);
-
-                if (drug == null)
-                {
-                    _logger.LogWarning($"Không tìm thấy thuốc với ID: {id}");
-                    return NotFound(new { message = $"Không tìm thấy thuốc với ID: {id}" });
-                }
-
-                _logger.LogInformation($"Trả về thông tin thuốc ID: {id}, Name: {drug.Name}");
-                return Ok(drug);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi lấy thông tin thuốc ID {id}: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi lấy thông tin thuốc" });
-            }
+            var drug = await _db.Drugs.FindAsync(id);
+            if (drug == null) return NotFound("Drug not found");
+            return Ok(drug);
         }
 
-        /// <summary>
-        /// Thêm thuốc mới
-        /// POST /api/drugs
-        /// </summary>
+        // POST: api/drugs
         [HttpPost]
-        public async Task<ActionResult<Drug>> CreateDrug([FromBody] Drug drug)
+        public async Task<IActionResult> Create(Drug drug)
         {
-            try
-            {
-                // Validate dữ liệu
-                if (string.IsNullOrWhiteSpace(drug.Name))
-                {
-                    return BadRequest(new { message = "Tên thuốc không được để trống" });
-                }
+            if (string.IsNullOrWhiteSpace(drug.Name))
+                return BadRequest("Name is required");
 
-                if (drug.SellPrice < 0)
-                {
-                    return BadRequest(new { message = "Giá bán phải lớn hơn hoặc bằng 0" });
-                }
+            if (drug.SellPricePerPill < 0 || drug.BoxPrice < 0)
+                return BadRequest("Price must be >= 0");
 
-                if (drug.BoxPrice < 0)
-                {
-                    return BadRequest(new { message = "Giá bán theo hộp phải lớn hơn hoặc bằng 0" });
-                }
+            drug.PackSize = drug.PackSize <= 0 ? 1 : drug.PackSize;
 
-                if (drug.PackSize <= 0)
-                {
-                    return BadRequest(new { message = "PackSize phải lớn hơn 0" });
-                }
+            _db.Drugs.Add(drug);
+            await _db.SaveChangesAsync();
 
-                // Thêm vào database
-                _context.Drugs.Add(drug);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation($"Đã thêm thuốc mới: ID={drug.Id}, Name={drug.Name}");
-
-                // Trả về 201 Created với location header
-                return CreatedAtAction(nameof(GetDrug), new { id = drug.Id }, drug);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi thêm thuốc: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi thêm thuốc" });
-            }
+            return CreatedAtAction(nameof(GetById), new { id = drug.Id }, drug);
         }
 
-        /// <summary>
-        /// Cập nhật thông tin thuốc
-        /// PUT /api/drugs/{id}
-        /// </summary>
+        // PUT: api/drugs/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDrug(int id, [FromBody] Drug drug)
+        public async Task<IActionResult> Update(int id, Drug drug)
         {
-            // Kiểm tra ID có khớp không
             if (id != drug.Id)
-            {
-                return BadRequest(new { message = "ID không khớp" });
-            }
+                return BadRequest("ID mismatch");
 
-            try
-            {
-                // Kiểm tra thuốc có tồn tại không
-                var existingDrug = await _context.Drugs.FindAsync(id);
-                if (existingDrug == null)
-                {
-                    _logger.LogWarning($"Không tìm thấy thuốc với ID: {id} để cập nhật");
-                    return NotFound(new { message = $"Không tìm thấy thuốc với ID: {id}" });
-                }
+            var dbDrug = await _db.Drugs.FindAsync(id);
+            if (dbDrug == null) return NotFound("Drug not found");
 
-                // Validate dữ liệu
-                if (string.IsNullOrWhiteSpace(drug.Name))
-                {
-                    return BadRequest(new { message = "Tên thuốc không được để trống" });
-                }
+            if (string.IsNullOrWhiteSpace(drug.Name))
+                return BadRequest("Name is required");
 
-                // Cập nhật thông tin
-                existingDrug.Name = drug.Name;
-                existingDrug.Code = drug.Code;
-                existingDrug.Category = drug.Category;
-                existingDrug.Unit = drug.Unit;
-                existingDrug.PackSize = drug.PackSize <= 0 ? 1 : drug.PackSize;
-                existingDrug.ImportPrice = drug.ImportPrice;
-                existingDrug.SellPrice = drug.SellPrice;
-                existingDrug.BoxPrice = drug.BoxPrice;
-                if (!string.IsNullOrEmpty(drug.ImageUrl))
-                {
-                    existingDrug.ImageUrl = drug.ImageUrl;
-                }
+            dbDrug.Name = drug.Name;
+            dbDrug.Code = drug.Code;
+            dbDrug.Category = drug.Category;
+            dbDrug.Unit = drug.Unit;
+            dbDrug.PackSize = drug.PackSize <= 0 ? 1 : drug.PackSize;
+            dbDrug.ImportPrice = drug.ImportPrice;
+            dbDrug.SellPricePerPill = drug.SellPricePerPill;
+            dbDrug.BoxPrice = drug.BoxPrice;
+            dbDrug.ImageUrl = drug.ImageUrl;
 
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation($"Đã cập nhật thuốc: ID={id}, Name={drug.Name}");
-
-                return Ok(existingDrug);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi cập nhật thuốc ID {id}: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi cập nhật thuốc" });
-            }
+            await _db.SaveChangesAsync();
+            return Ok(dbDrug);
         }
 
-        /// <summary>
-        /// Xóa thuốc
-        /// DELETE /api/drugs/{id}
-        /// </summary>
+        // DELETE: api/drugs/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDrug(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            try
-            {
-                var drug = await _context.Drugs.FindAsync(id);
-                
-                if (drug == null)
-                {
-                    _logger.LogWarning($"Không tìm thấy thuốc với ID: {id} để xóa");
-                    return NotFound(new { message = $"Không tìm thấy thuốc với ID: {id}" });
-                }
+            var drug = await _db.Drugs.FindAsync(id);
+            if (drug == null) return NotFound("Drug not found");
 
-                _context.Drugs.Remove(drug);
-                await _context.SaveChangesAsync();
+            _db.Drugs.Remove(drug);
+            await _db.SaveChangesAsync();
 
-                _logger.LogInformation($"Đã xóa thuốc: ID={id}, Name={drug.Name}");
-
-                return Ok(new { message = $"Đã xóa thuốc '{drug.Name}' thành công" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Lỗi khi xóa thuốc ID {id}: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi server khi xóa thuốc" });
-            }
+            return NoContent();
         }
     }
 }
-

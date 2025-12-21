@@ -5,7 +5,7 @@
 }
 
 <div class="container py-4">
-    <h2>Sửa Hóa đơn #@Model.Id</h2>
+    <h2>Sửa Hóa đơn #@Model?.Id</h2>
 
     @if (isPaid)
     {
@@ -28,7 +28,7 @@
         </div>
     }
 
-    <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+    <form asp-action="Edit" asp-route-id="@Model?.Id" method="post">
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
         <input type="hidden" asp-for="PaymentStatus" />
@@ -36,7 +36,7 @@
         <div class="card">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">Thông tin hóa đơn</h4>
-                <span class="badge @(isPaid ? "bg-success" : "bg-warning")">@Model.PaymentStatus</span>
+                <span class="badge @(isPaid ? "bg-success" : "bg-warning")">@Model?.PaymentStatus</span>
             </div>
 
             <div class="card-body">
@@ -71,20 +71,20 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @for (var i = 0; i < Model.Items.Count; i++)
+                            @for (var i = 0; i < (Model?.Items?.Count ?? 0); i++)
                             {
                                 <tr>
                                     <td>
-                                        <input name="Items[@i].DrugId" value="@Model.Items[i].DrugId" class="form-control" type="number" min="1" disabled="@(isPaid ? "disabled" : null)" />
+                                        <input name="Items[@i].DrugId" value="@(Model?.Items?[i]?.DrugId)" class="form-control" type="number" min="1" disabled="@(isPaid ? "disabled" : null)" />
                                     </td>
                                     <td>
                                         <select name="Items[@i].UnitType" class="form-select" disabled="@(isPaid ? "disabled" : null)">
-                                            <option value="pill" selected="@(string.Equals(Model.Items[i].UnitType, "pill", StringComparison.OrdinalIgnoreCase))">Viên</option>
-                                            <option value="box" selected="@(string.Equals(Model.Items[i].UnitType, "box", StringComparison.OrdinalIgnoreCase))">Hộp</option>
+                                            <option value="pill" selected="@(string.Equals(Model?.Items?[i]?.UnitType, "pill", StringComparison.OrdinalIgnoreCase))">Viên</option>
+                                            <option value="box" selected="@(string.Equals(Model?.Items?[i]?.UnitType, "box", StringComparison.OrdinalIgnoreCase))">Hộp</option>
                                         </select>
                                     </td>
                                     <td>
-                                        <input name="Items[@i].Quantity" value="@Model.Items[i].Quantity" class="form-control" type="number" min="1" disabled="@(isPaid ? "disabled" : null)" />
+                                        <input name="Items[@i].Quantity" value="@(Model?.Items?[i]?.Quantity)" class="form-control" type="number" min="1" disabled="@(isPaid ? "disabled" : null)" />
                                     </td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-outline-danger btn-sm removeRowBtn" disabled="@(isPaid ? "disabled" : null)">
@@ -103,7 +103,7 @@
                     <a asp-action="Index" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Quay lại
                     </a>
-                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-info">
+                    <a asp-action="Details" asp-route-id="@Model?.Id" class="btn btn-info">
                         <i class="bi bi-eye"></i> Xem chi tiết
                     </a>
                 </div>

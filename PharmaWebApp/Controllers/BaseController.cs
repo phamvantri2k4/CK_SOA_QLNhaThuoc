@@ -1,47 +1,48 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using System.Security.Claims;
+using System.Net.Http.Headers;
 
 namespace PharmaWebApp.Controllers
 {
     /// <summary>
-    /// Base controller với các helper methods chung
+    /// BaseController: cung cấp các hàm dùng chung cho controller phía client
     /// </summary>
     public abstract class BaseController : Controller
     {
         /// <summary>
-        /// Lấy JWT token từ claims của user đã đăng nhập
+        /// Lấy JWT token đã lưu trong Claim khi đăng nhập
         /// </summary>
         protected string? GetJwtToken()
-        {
-            return User?.FindFirst("Token")?.Value;
-        }
+            => User?.FindFirst("Token")?.Value;
 
         /// <summary>
-        /// Tạo HttpClient với JWT token trong header
+        /// Tạo HttpClient có gắn JWT token (dùng khi gọi API cần đăng nhập)
         /// </summary>
         protected HttpClient CreateAuthenticatedHttpClient()
         {
-            var httpClientFactory = HttpContext.RequestServices
+            var factory = HttpContext.RequestServices
                 .GetRequiredService<IHttpClientFactory>();
-            var httpClient = httpClientFactory.CreateClient();
+
+            var client = factory.CreateClient();
 
             var token = GetJwtToken();
             if (!string.IsNullOrEmpty(token))
             {
-                httpClient.DefaultRequestHeaders.Authorization = 
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
             }
 
-            return httpClient;
+            return client;
         }
 
+        /// <summary>
+        /// Tạo HttpClient thường (không cần JWT)
+        /// </summary>
         protected HttpClient CreateHttpClient()
         {
-            var httpClientFactory = HttpContext.RequestServices
+            var factory = HttpContext.RequestServices
                 .GetRequiredService<IHttpClientFactory>();
-            return httpClientFactory.CreateClient();
+
+            return factory.CreateClient();
         }
     }
 }
-

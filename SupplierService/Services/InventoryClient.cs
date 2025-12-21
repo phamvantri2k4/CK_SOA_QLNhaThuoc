@@ -14,7 +14,7 @@ namespace SupplierService.Services
             _configuration = configuration;
         }
 
-        public async Task<bool> ImportToInventory(int drugId, int quantity, DateTime? expiryDate = null)
+        public async Task<bool> ImportToInventory(int drugId, int quantity)
         {
             var baseUrl = await ResolveInventoryBaseUrlAsync();
             var httpClient = _httpClientFactory.CreateClient();
@@ -22,8 +22,7 @@ namespace SupplierService.Services
             var payload = new
             {
                 drugId = drugId,
-                quantity = quantity,
-                expiryDate = expiryDate
+                quantity = quantity
             };
 
             var response = await httpClient.PostAsJsonAsync($"{baseUrl}/api/inventory/import", payload);

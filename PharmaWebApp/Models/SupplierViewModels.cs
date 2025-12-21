@@ -4,15 +4,21 @@ namespace PharmaWebApp.Models
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
+        public string? ContactPerson { get; set; }
         public string Address { get; set; } = string.Empty;
+        public string? Notes { get; set; }
     }
 
     public class CreateSupplierViewModel
     {
         public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
+        public string? ContactPerson { get; set; }
         public string Address { get; set; } = string.Empty;
+        public string? Notes { get; set; }
     }
 
     public class PurchaseOrderViewModel
@@ -31,7 +37,6 @@ namespace PharmaWebApp.Models
         public string? DrugName { get; set; }
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
-        public DateTime? ExpiryDate { get; set; }
     }
 
     public class PurchaseOrderDetailsResponseViewModel
@@ -54,6 +59,5 @@ namespace PharmaWebApp.Models
         public int DrugId { get; set; }
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
-        public DateTime? ExpiryDate { get; set; }
     }
 }

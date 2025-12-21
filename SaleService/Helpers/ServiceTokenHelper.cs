@@ -4,42 +4,48 @@ using System.Text.Json;
 namespace SaleService.Helpers
 {
     /// <summary>
-    /// Helper để lấy service token từ AuthService
+    /// Lấy JWT token cho service-to-service (SOA)
     /// </summary>
-    public class ServiceTokenHelper
+    public static class ServiceTokenHelper
     {
-        private static string? _cachedToken;
-        private static DateTime _tokenExpiry = DateTime.MinValue;
+        private static string? _token;
+        private static DateTime _expireAt;
+
+        // Dùng chung cho các service (đồ án cho phép hard-code)
         private const string ServiceKey = "ServiceKey123!";
 
-        public static async Task<string?> GetServiceTokenAsync(HttpClient httpClient, string authServiceUrl)
+        public static async Task<string?> GetServiceTokenAsync(
+            HttpClient client,
+            string authServiceUrl)
         {
-            // Nếu token còn hiệu lực, dùng lại
-            if (!string.IsNullOrEmpty(_cachedToken) && DateTime.UtcNow < _tokenExpiry)
-            {
-                return _cachedToken;
-            }
+            // Validate
+            if (string.IsNullOrWhiteSpace(authServiceUrl))
+                return null;
+
+            // Token còn hạn → dùng lại
+            if (!string.IsNullOrEmpty(_token) && DateTime.UtcNow < _expireAt)
+                return _token;
 
             try
             {
-                var request = new { ServiceKey = ServiceKey };
-                var response = await httpClient.PostAsJsonAsync($"{authServiceUrl}/api/auth/service-token", request);
+                var response = await client.PostAsJsonAsync(
+                    $"{authServiceUrl.TrimEnd('/')}/api/auth/service-token",
+                    new { ServiceKey });
 
-                if (response.IsSuccessStatusCode)
-                {
-                    var result = await response.Content.ReadFromJsonAsync<JsonElement>();
-                    _cachedToken = result.GetProperty("token").GetString();
-                    _tokenExpiry = DateTime.UtcNow.AddHours(23); // Token hết hạn sau 23 giờ
-                    return _cachedToken;
-                }
+                if (!response.IsSuccessStatusCode)
+                    return null;
+
+                var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+                _token = json.GetProperty("token").GetString();
+                _expireAt = DateTime.UtcNow.AddHours(23);
+
+                return _token;
             }
             catch
             {
-                // Log error nếu cần
+                return null;
             }
-
-            return null;
         }
     }
 }
-

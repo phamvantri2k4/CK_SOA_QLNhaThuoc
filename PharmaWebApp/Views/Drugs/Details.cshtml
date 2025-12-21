@@ -1,10 +1,17 @@
 @model PharmaWebApp.Models.DrugViewModel
 @{
-    ViewData["Title"] = "Chi tiết Thuốc";
-    var hasPillPrice = Model != null && Model.SellPrice > 0;
+    ViewData["Title"] = "Chi tiết thuốc";
+    
+    var hasSellPricePerPill = Model != null && Model.SellPricePerPill > 0;
     var hasBoxPrice = Model != null && Model.BoxPrice > 0;
     var packSize = Model?.PackSize ?? 0;
     var hasPackSize = packSize > 0;
+    
+    // Helper function for Vietnamese number formatting
+    string FormatVND(int amount)
+    {
+        return amount.ToString("N0", new System.Globalization.CultureInfo("vi-VN"));
+    }
 }
 
 <div class="container py-4">
@@ -64,66 +71,41 @@
                                 <td>@Model.Unit</td>
                             </tr>
                             <tr>
-                                <th>Số viên / hộp:</th>
-                                <td>@Model.PackSize</td>
+                                <th>Số viên trong mỗi hộp:</th>
+                                <td>
+                                    <div><strong>@Model.PackSize</strong> <span class="text-muted">viên / hộp</span></div>
+                                    <div class="small text-muted">Mỗi hộp chứa @Model.PackSize viên thuốc</div>
+                                </td>
                             </tr>
                             <tr>
                                 <th>Giá nhập:</th>
                                 <td>
-                                    <div><strong>@Model.ImportPrice.ToString("N0") VNĐ</strong> <span class="text-muted">/ 1 hộp</span></div>
-                                    @if (hasPackSize)
-                                    {
-                                        <div class="small text-muted">~ @((Model.ImportPrice / packSize).ToString("N0")) VNĐ / 1 @Model.Unit</div>
-                                    }
+                                    <div><strong>@FormatVND(Model.ImportPrice) VNĐ</strong> <span class="text-muted">/ 1 hộp</span></div>
                                 </td>
                             </tr>
                             <tr>
-                                <th>Giá bán lẻ (1 @Model.Unit):</th>
+                                <th>Giá bán lẻ theo viên:</th>
                                 <td>
-                                    @if (hasPillPrice)
+                                    @if (hasSellPricePerPill)
                                     {
-                                        <strong class="text-success">@Model.SellPrice.ToString("N0") VNĐ</strong>
+                                        <div><strong class="text-success">@FormatVND(Model.SellPricePerPill) VNĐ</strong> <span class="text-muted">/ 1 viên</span></div>
                                     }
                                     else
                                     {
-                                        <span class="text-muted">Không bán lẻ</span>
+                                        <span class="text-muted">Không có giá bán lẻ theo viên</span>
                                     }
                                 </td>
                             </tr>
                             <tr>
-                                <th>Giá bán hộp (1 hộp):</th>
+                                <th>Giá bán hộp:</th>
                                 <td>
                                     @if (hasBoxPrice)
                                     {
-                                        <strong class="text-success">@Model.BoxPrice.ToString("N0") VNĐ</strong>
-                                        @if (packSize > 0)
-                                        {
-                                            <div class="small text-muted">~ @((Model.BoxPrice / packSize).ToString("N0")) VNĐ / 1 @Model.Unit</div>
-                                        }
+                                        <div><strong class="text-success">@FormatVND(Model.BoxPrice) VNĐ</strong> <span class="text-muted">/ 1 hộp (@Model.PackSize @Model.Unit)</span></div>
                                     }
                                     else
                                     {
                                         <span class="text-muted">Không bán theo hộp</span>
-                                    }
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>Lợi nhuận:</th>
-                                <td>
-                                    @if (hasPillPrice)
-                                    {
-                                        if (hasPackSize)
-                                        {
-                                            <div><strong class="text-info">@((Model.SellPrice - (Model.ImportPrice / packSize)).ToString("N0")) VNĐ</strong> <span class="text-muted">/ 1 @Model.Unit</span></div>
-                                        }
-                                        else
-                                        {
-                                            <div class="text-muted">Chưa có PackSize để tính lợi nhuận theo đơn vị</div>
-                                        }
-                                    }
-                                    @if (hasBoxPrice)
-                                    {
-                                        <div><strong class="text-info">@((Model.BoxPrice - Model.ImportPrice).ToString("N0")) VNĐ</strong> <span class="text-muted">/ 1 hộp</span></div>
                                     }
                                 </td>
                             </tr>

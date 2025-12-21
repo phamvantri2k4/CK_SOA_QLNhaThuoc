@@ -2,7 +2,7 @@
   {
     "ContainingType": "ServiceRegistry.Controllers.RegistryController",
     "Method": "Health",
-    "RelativePath": "api/Registry/health",
+    "RelativePath": "api/registry/health",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -12,13 +12,13 @@
   {
     "ContainingType": "ServiceRegistry.Controllers.RegistryController",
     "Method": "Heartbeat",
-    "RelativePath": "api/Registry/heartbeat/{serviceName}",
+    "RelativePath": "api/registry/heartbeat/{name}",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "serviceName",
+        "Name": "name",
         "Type": "System.String",
         "IsRequired": true
       }
@@ -28,13 +28,13 @@
   {
     "ContainingType": "ServiceRegistry.Controllers.RegistryController",
     "Method": "Register",
-    "RelativePath": "api/Registry/register",
+    "RelativePath": "api/registry/register",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "serviceInfo",
+        "Name": "info",
         "Type": "Shared.ServiceInfo",
         "IsRequired": true
       }
@@ -43,8 +43,8 @@
   },
   {
     "ContainingType": "ServiceRegistry.Controllers.RegistryController",
-    "Method": "GetAllServices",
-    "RelativePath": "api/Registry/services",
+    "Method": "GetAll",
+    "RelativePath": "api/registry/services",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -53,14 +53,14 @@
   },
   {
     "ContainingType": "ServiceRegistry.Controllers.RegistryController",
-    "Method": "FindService",
-    "RelativePath": "api/Registry/services/{serviceName}",
+    "Method": "Find",
+    "RelativePath": "api/registry/services/{name}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "serviceName",
+        "Name": "name",
         "Type": "System.String",
         "IsRequired": true
       }
@@ -69,14 +69,14 @@
   },
   {
     "ContainingType": "ServiceRegistry.Controllers.RegistryController",
-    "Method": "DeleteService",
-    "RelativePath": "api/Registry/services/{serviceName}",
+    "Method": "Delete",
+    "RelativePath": "api/registry/services/{name}",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "serviceName",
+        "Name": "name",
         "Type": "System.String",
         "IsRequired": true
       }

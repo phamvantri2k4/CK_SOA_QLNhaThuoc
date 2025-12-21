@@ -3,68 +3,65 @@ using Microsoft.AspNetCore.Mvc;
 using PharmaWebApp.Models;
 using PharmaWebApp.Services;
 using System.Net.Http.Json;
+using System.Security.Claims;
 
 namespace PharmaWebApp.Controllers
 {
     [Authorize]
     public class AccountController : BaseController
     {
-        private readonly ILogger<AccountController> _logger;
-        private readonly IServiceResolver _serviceResolver;
+        private readonly IServiceResolver _resolver;
 
-        public AccountController(ILogger<AccountController> logger, IServiceResolver serviceResolver)
+        public AccountController(IServiceResolver resolver)
         {
-            _logger = logger;
-            _serviceResolver = serviceResolver;
+            _resolver = resolver;
         }
+
+        /* ================= PROFILE ================= */
 
         public async Task<IActionResult> Profile()
         {
-            var vm = new AccountProfileViewModel();
-
-            try
+            var vm = new AccountProfileViewModel
             {
-                var idClaim = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                _ = int.TryParse(idClaim, out var userId);
+                Id = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0,
+                Username = User.FindFirstValue(ClaimTypes.Name) ?? "",
+                FullName = User.FindFirstValue("FullName") ?? "",
+                Role = User.FindFirstValue(ClaimTypes.Role) ?? ""
+            };
 
-                vm.Id = userId;
-                vm.Username = User?.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? string.Empty;
-                vm.FullName = User?.FindFirst("FullName")?.Value ?? string.Empty;
-                vm.Role = User?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? string.Empty;
+            if (vm.Id > 0)
+            {
+                var (client, url) = await GetAuthClientAsync();
+                var user = await client.GetFromJsonAsync<UserDto>($"{url}/api/users/{vm.Id}");
 
-                var authServiceUrl = await _serviceResolver.GetRequiredAsync("AuthService");
-                var httpClient = CreateAuthenticatedHttpClient();
-
-                if (userId > 0)
+                if (user != null)
                 {
-                    var response = await httpClient.GetAsync($"{authServiceUrl}/api/users/{userId}");
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var user = await response.Content.ReadFromJsonAsync<AuthUserDto>();
-                        if (user != null)
-                        {
-                            vm.Username = user.Username;
-                            vm.FullName = user.FullName;
-                            vm.Role = user.Role;
-                            vm.IsActive = user.IsActive;
-                        }
-                    }
+                    vm.Username = user.Username;
+                    vm.FullName = user.FullName;
+                    vm.Role = user.Role;
+                    vm.IsActive = user.IsActive;
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"Không thể load thông tin tài khoản: {ex.Message}");
             }
 
             return View(vm);
         }
 
-        private class AuthUserDto
+        /* ================= HÀM DÙNG CHUNG ================= */
+
+        private async Task<(HttpClient client, string url)> GetAuthClientAsync()
+        {
+            var url = await _resolver.GetRequiredAsync("AuthService");
+            return (CreateAuthenticatedHttpClient(), url);
+        }
+
+        /* ================= DTO ĐƠN GIẢN ================= */
+
+        private class UserDto
         {
             public int Id { get; set; }
-            public string Username { get; set; } = string.Empty;
-            public string FullName { get; set; } = string.Empty;
-            public string Role { get; set; } = string.Empty;
+            public string Username { get; set; } = "";
+            public string FullName { get; set; } = "";
+            public string Role { get; set; } = "";
             public bool IsActive { get; set; }
         }
     }

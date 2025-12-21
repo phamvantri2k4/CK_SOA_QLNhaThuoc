@@ -1,54 +1,34 @@
 [
   {
     "ContainingType": "CustomerService.Controllers.CustomersController",
-    "Method": "GetCustomers",
-    "RelativePath": "api/Customers",
+    "Method": "GetAll",
+    "RelativePath": "api/customers",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[CustomerService.Models.Customer, CustomerService, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "CustomerService.Controllers.CustomersController",
-    "Method": "CreateCustomer",
-    "RelativePath": "api/Customers",
+    "Method": "Create",
+    "RelativePath": "api/customers",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
-        "Type": "CustomerService.Controllers.CreateCustomerRequest",
+        "Name": "r",
+        "Type": "CustomerService.Controllers.CustomerReq",
         "IsRequired": true
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "CustomerService.Models.Customer",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "CustomerService.Controllers.CustomersController",
-    "Method": "GetCustomer",
-    "RelativePath": "api/Customers/{id}",
+    "Method": "Get",
+    "RelativePath": "api/customers/{id}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -59,22 +39,12 @@
         "IsRequired": true
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "CustomerService.Models.Customer",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "CustomerService.Controllers.CustomersController",
-    "Method": "UpdateCustomer",
-    "RelativePath": "api/Customers/{id}",
+    "Method": "Update",
+    "RelativePath": "api/customers/{id}",
     "HttpMethod": "PUT",
     "IsController": true,
     "Order": 0,
@@ -85,8 +55,8 @@
         "IsRequired": true
       },
       {
-        "Name": "request",
-        "Type": "CustomerService.Controllers.UpdateCustomerRequest",
+        "Name": "r",
+        "Type": "CustomerService.Controllers.CustomerReq",
         "IsRequired": true
       }
     ],
@@ -94,8 +64,8 @@
   },
   {
     "ContainingType": "CustomerService.Controllers.CustomersController",
-    "Method": "DeleteCustomer",
-    "RelativePath": "api/Customers/{id}",
+    "Method": "Delete",
+    "RelativePath": "api/customers/{id}",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -110,8 +80,8 @@
   },
   {
     "ContainingType": "CustomerService.Controllers.CustomersController",
-    "Method": "GetPurchaseHistory",
-    "RelativePath": "api/Customers/{id}/purchase-history",
+    "Method": "History",
+    "RelativePath": "api/customers/{id}/purchase-history",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -122,68 +92,22 @@
         "IsRequired": true
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[CustomerService.Controllers.PurchaseHistoryItem, CustomerService, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "CustomerService.Controllers.CustomersController",
-    "Method": "FindOrCreateCustomer",
-    "RelativePath": "api/Customers/find-or-create",
+    "Method": "FindOrCreate",
+    "RelativePath": "api/customers/find-or-create",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
-        "Type": "CustomerService.Controllers.FindOrCreateCustomerRequest",
+        "Name": "r",
+        "Type": "CustomerService.Controllers.CustomerReq",
         "IsRequired": true
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "CustomerService.Models.Customer",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "CustomerService.Controllers.CustomersController",
-    "Method": "SearchCustomerByPhone",
-    "RelativePath": "api/Customers/search",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "phone",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "CustomerService.Models.Customer",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   }
 ]

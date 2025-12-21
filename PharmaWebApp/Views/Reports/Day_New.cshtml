@@ -1,0 +1,167 @@
+@model PharmaWebApp.Models.SalesReportViewModel
+@{
+    ViewData["Title"] = "Báo cáo ngày";
+    var vm = Model ?? new PharmaWebApp.Models.SalesReportViewModel { ReportType = "day" };
+    var selectedDate = vm.SelectedDate?.Date ?? DateTime.Today;
+    var from = (vm.From != default) ? vm.From : selectedDate;
+    var to = (vm.To != default) ? vm.To : selectedDate.AddDays(1);
+    var toDisplay = to > from ? to.AddDays(-1) : from;
+}
+
+<div class="container-fluid py-2">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <div class="app-page-title"><i class="bi bi-graph-up"></i> @ViewData["Title"]</div>
+            <div class="text-muted">Tổng hợp doanh thu và hóa đơn theo ngày</div>
+        </div>
+    </div>
+
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+    }
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" asp-action="Day" class="row g-2 align-items-end">
+                <div class="col-sm-4 col-md-3">
+                    <label class="form-label">Chọn ngày</label>
+                    <input type="date" class="form-control" name="date" value="@selectedDate.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-sm-4 col-md-3">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Xem báo cáo</button>
+                </div>
+                <div class="col-sm-4 col-md-6 text-muted small">
+                    Khoảng thời gian: <strong>@from.ToString("dd/MM/yyyy")</strong> - <strong>@toDisplay.ToString("dd/MM/yyyy")</strong>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted">Tổng doanh thu</div>
+                    <div class="h4 mb-0 text-success">@(vm.TotalRevenue.ToString("N0")) ₫</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted">Doanh thu đã thanh toán</div>
+                    <div class="h4 mb-0">@(vm.PaidRevenue.ToString("N0")) ₫</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted">Số hóa đơn</div>
+                    <div class="h4 mb-0">@vm.InvoiceCount</div>
+                    <div class="small text-muted">Paid: @vm.PaidCount | Pending: @vm.PendingCount</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted">Top thuốc</div>
+                    <div class="h4 mb-0">@(vm.TopDrugs?.Count ?? 0)</div>
+                    <div class="small text-muted">Top 10 theo doanh thu</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header"><strong>Top thuốc bán chạy</strong></div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Thuốc</th>
+                                    <th class="text-center">SL</th>
+                                    <th class="text-end">Doanh thu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if ((vm.TopDrugs?.Count ?? 0) == 0)
+                                {
+                                    <tr><td colspan="3" class="text-center text-muted py-3">Không có dữ liệu</td></tr>
+                                }
+                                else
+                                {
+                                    foreach (var t in vm.TopDrugs ?? new List<PharmaWebApp.Models.ReportTopDrugViewModel>())
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="fw-semibold">@t.DrugName</div>
+                                                <div class="text-muted small">ID: @t.DrugId</div>
+                                            </td>
+                                            <td class="text-center"><strong>@t.Quantity</strong></td>
+                                            <td class="text-end">@(t.Revenue.ToString("N0")) ₫</td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header"><strong>Danh sách hóa đơn</strong></div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Mã</th>
+                                    <th>Khách hàng</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thời gian</th>
+                                    <th class="text-end">Tổng tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if ((vm.Invoices?.Count ?? 0) == 0)
+                                {
+                                    <tr><td colspan="5" class="text-center text-muted py-3">Không có hóa đơn</td></tr>
+                                }
+                                else
+                                {
+                                    foreach (var inv in vm.Invoices ?? new List<PharmaWebApp.Models.SaleInvoiceDisplayViewModel>())
+                                    {
+                                        <tr>
+                                            <td><strong>#@inv.Id</strong></td>
+                                            <td>@(string.IsNullOrWhiteSpace(inv.CustomerName) ? "-" : inv.CustomerName)</td>
+                                            <td>
+                                                @if (string.Equals(inv.PaymentStatus, "Paid", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    <span class="badge bg-success">Paid</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning text-dark">Pending</span>
+                                                }
+                                            </td>
+                                            <td>@inv.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                            <td class="text-end">@(inv.TotalAmount.ToString("N0")) ₫</td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

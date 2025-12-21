@@ -21,6 +21,23 @@ namespace DrugService.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("DrugService.Models.Category", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Categories");
+                });
+
             modelBuilder.Entity("DrugService.Models.Drug", b =>
                 {
                     b.Property<int>("Id")
@@ -29,8 +46,8 @@ namespace DrugService.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("BoxPrice")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("BoxPrice")
+                        .HasColumnType("int");
 
                     b.Property<string>("Category")
                         .IsRequired()
@@ -43,8 +60,8 @@ namespace DrugService.Migrations
                     b.Property<string>("ImageUrl")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal>("ImportPrice")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("ImportPrice")
+                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -53,8 +70,8 @@ namespace DrugService.Migrations
                     b.Property<int>("PackSize")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("SellPrice")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("SellPricePerPill")
+                        .HasColumnType("int");
 
                     b.Property<string>("Unit")
                         .IsRequired()

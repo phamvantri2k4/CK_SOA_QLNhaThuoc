@@ -97,7 +97,6 @@
                             <tr>
                                 <th>Mã thuốc</th>
                                 <th>Tên thuốc</th>
-                                <th class="text-center">Đơn vị</th>
                                 <th class="text-center">Số lượng</th>
                                 <th class="text-end">Đơn giá</th>
                                 <th class="text-end">Thành tiền</th>
@@ -109,8 +108,13 @@
                                 <tr>
                                     <td>@item.DrugId</td>
                                     <td><strong>@item.DrugName</strong></td>
-                                    <td class="text-center">@item.UnitType</td>
-                                    <td class="text-center">@item.Quantity</td>
+                                    <td class="text-center">
+                                        <div><strong>@item.Quantity</strong> @item.UnitType.ToLower()</div>
+                                        @if (item.UnitType.ToLower() == "hộp")
+                                        {
+                                            <div class="small text-muted">Số viên theo từng thuốc</div>
+                                        }
+                                    </td>
                                     <td class="text-end">@item.UnitPrice.ToString("N0") VNĐ</td>
                                     <td class="text-end"><strong>@item.LineTotal.ToString("N0") VNĐ</strong></td>
                                 </tr>
@@ -174,11 +178,11 @@
 
 <script>
     async function completePayment() {
-        const message = `Xác nhận thanh toán hóa đơn #@Model.Id?\n\nTổng tiền: @Model.TotalAmount.ToString("N0") VNĐ`;
+        const message = `Xác nhận thanh toán hóa đơn #@Model?.Id?\n\nTổng tiền: @Model?.TotalAmount.ToString("N0") VNĐ`;
         
         showConfirm('Xác nhận thanh toán', message, async () => {
             try {
-                const response = await fetch('@Url.Action("MarkAsPaid", "Sales", new { id = Model.Id })', {
+                const response = await fetch('@Url.Action("MarkAsPaid", "Sales", new { id = Model?.Id })', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

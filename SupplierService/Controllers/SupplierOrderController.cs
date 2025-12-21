@@ -125,12 +125,11 @@ namespace SupplierService.Controllers
                     PurchaseOrderId = order.Id,
                     DrugId = d.DrugId,
                     Quantity = d.Quantity,
-                    UnitPrice = d.UnitPrice,
-                    ExpiryDate = d.ExpiryDate
+                    UnitPrice = d.UnitPrice
                 };
                 _context.PurchaseOrderDetails.Add(detail);
 
-                var ok = await _inventoryClient.ImportToInventory(d.DrugId, d.Quantity, d.ExpiryDate);
+                var ok = await _inventoryClient.ImportToInventory(d.DrugId, d.Quantity);
                 if (!ok)
                 {
                     return StatusCode(502, "Tạo đơn nhập thành công nhưng cập nhật kho thất bại");

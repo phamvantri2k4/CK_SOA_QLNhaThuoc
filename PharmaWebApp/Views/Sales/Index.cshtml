@@ -1,6 +1,12 @@
 @model PharmaWebApp.Models.PagedList<PharmaWebApp.Models.SaleInvoiceDisplayViewModel>
 @{
     ViewData["Title"] = "Danh sách Hóa đơn";
+    
+    // Helper function for Vietnamese number formatting
+    string FormatVND(decimal amount)
+    {
+        return amount.ToString("N0", new System.Globalization.CultureInfo("vi-VN"));
+    }
 }
 
 <div class="container py-4">
@@ -32,8 +38,8 @@
 
     <div class="mb-3 d-flex justify-content-between align-items-center">
         <div>
-            <a asp-action="Create" class="btn btn-success">
-                <i class="bi bi-plus-circle"></i> Lập hóa đơn mới
+            <a asp-action="OrderCreate" class="btn btn-success">
+                <i class="bi bi-cart-plus"></i> Lập hóa đơn mới
             </a>
             <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">
                 <i class="bi bi-house"></i> Về trang chủ
@@ -109,7 +115,7 @@
                                 }
                             </td>
                             <td>@invoice.Items.Count</td>
-                            <td><strong class="text-success">@invoice.TotalAmount.ToString("N0") VNĐ</strong></td>
+                            <td><strong class="text-success">@FormatVND(invoice.TotalAmount) VNĐ</strong></td>
                             <td>
                                 <a asp-action="Details" asp-route-id="@invoice.Id" class="btn btn-sm btn-info">
                                     <i class="bi bi-eye"></i> Chi tiết

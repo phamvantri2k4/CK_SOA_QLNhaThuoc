@@ -68,7 +68,7 @@ using (var scope = app.Services.CreateScope())
                     Unit = "Viên",
                     PackSize = 10,
                     ImportPrice = 5000,
-                    SellPrice = 8000,
+                    SellPricePerPill = 800,
                     BoxPrice = 75000,
                     ImageUrl = ""
                 },
@@ -80,7 +80,7 @@ using (var scope = app.Services.CreateScope())
                     Unit = "Viên",
                     PackSize = 12,
                     ImportPrice = 12000,
-                    SellPrice = 18000,
+                    SellPricePerPill = 1500,
                     BoxPrice = 200000,
                     ImageUrl = ""
                 },
@@ -92,7 +92,7 @@ using (var scope = app.Services.CreateScope())
                     Unit = "Viên",
                     PackSize = 30,
                     ImportPrice = 8000,
-                    SellPrice = 12000,
+                    SellPricePerPill = 400,
                     BoxPrice = 330000,
                     ImageUrl = ""
                 },
@@ -104,7 +104,7 @@ using (var scope = app.Services.CreateScope())
                     Unit = "Viên",
                     PackSize = 10,
                     ImportPrice = 10000,
-                    SellPrice = 15000,
+                    SellPricePerPill = 1500,
                     BoxPrice = 145000,
                     ImageUrl = ""
                 },
@@ -116,7 +116,7 @@ using (var scope = app.Services.CreateScope())
                     Unit = "Viên",
                     PackSize = 14,
                     ImportPrice = 15000,
-                    SellPrice = 22000,
+                    SellPricePerPill = 1570,
                     BoxPrice = 290000,
                     ImageUrl = ""
                 }

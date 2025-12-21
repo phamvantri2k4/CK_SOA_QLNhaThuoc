@@ -5341,11 +5341,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Ky 1 Nam 4\\Kiến trúc SOA\\CK_SOA\\QL_NhaThuoc\\CustomerService\\CustomerService.csproj",
+      "projectUniqueName": "D:\\Ky 1 Nam 4\\Kiến trúc SOA\\CK_SOA\\QL_NhaThuoc\\QL_NhaThuoc\\CustomerService\\CustomerService.csproj",
       "projectName": "CustomerService",
-      "projectPath": "D:\\Ky 1 Nam 4\\Kiến trúc SOA\\CK_SOA\\QL_NhaThuoc\\CustomerService\\CustomerService.csproj",
+      "projectPath": "D:\\Ky 1 Nam 4\\Kiến trúc SOA\\CK_SOA\\QL_NhaThuoc\\QL_NhaThuoc\\CustomerService\\CustomerService.csproj",
       "packagesPath": "C:\\Users\\tripv\\.nuget\\packages\\",
-      "outputPath": "D:\\Ky 1 Nam 4\\Kiến trúc SOA\\CK_SOA\\QL_NhaThuoc\\CustomerService\\obj\\",
+      "outputPath": "D:\\Ky 1 Nam 4\\Kiến trúc SOA\\CK_SOA\\QL_NhaThuoc\\QL_NhaThuoc\\CustomerService\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -5366,8 +5366,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "D:\\Ky 1 Nam 4\\Kiến trúc SOA\\CK_SOA\\QL_NhaThuoc\\Shared\\Shared.csproj": {
-              "projectPath": "D:\\Ky 1 Nam 4\\Kiến trúc SOA\\CK_SOA\\QL_NhaThuoc\\Shared\\Shared.csproj"
+            "D:\\Ky 1 Nam 4\\Kiến trúc SOA\\CK_SOA\\QL_NhaThuoc\\QL_NhaThuoc\\Shared\\Shared.csproj": {
+              "projectPath": "D:\\Ky 1 Nam 4\\Kiến trúc SOA\\CK_SOA\\QL_NhaThuoc\\QL_NhaThuoc\\Shared\\Shared.csproj"
             }
           }
         }
