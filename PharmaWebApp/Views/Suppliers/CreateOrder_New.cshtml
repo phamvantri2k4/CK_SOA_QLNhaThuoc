@@ -72,7 +72,8 @@
                                 <thead>
                                     <tr>
                                         <th style="min-width: 240px;">Thuốc</th>
-                                        <th class="text-center" style="width: 110px;">Số lượng</th>
+                                        <th class="text-center" style="width: 100px;">Số lượng</th>
+                                        <th class="text-center" style="width: 90px;">Đơn vị</th>
                                         <th class="text-end" style="width: 140px;">Đơn giá</th>
                                         <th class="text-end" style="width: 120px;">Thành tiền</th>
                                         <th class="text-end" style="width: 80px;"></th>
@@ -87,12 +88,18 @@
                                                     <option value="0">-- Chọn thuốc --</option>
                                                     @foreach (var d in drugs)
                                                     {
-                                                        <option value="@d.Id" selected="@(details[i].DrugId == d.Id)">@d.Name (@d.Code)</option>
+                                                        <option value="@d.Id" data-packsize="@d.PackSize" selected="@(details[i].DrugId == d.Id)">@d.Name (@d.Code)</option>
                                                     }
                                                 </select>
                                             </td>
                                             <td>
                                                 <input class="form-control form-control-sm text-center qty" type="number" min="1" name="Details[@i].Quantity" value="@details[i].Quantity" required />
+                                            </td>
+                                            <td>
+                                                <select class="form-select form-select-sm unit-select" name="Details[@i].UnitType">
+                                                    <option value="box">Hộp</option>
+                                                    <option value="pill">Viên</option>
+                                                </select>
                                             </td>
                                             <td>
                                                 <input class="form-control form-control-sm text-end price" type="number" step="1" min="0" name="Details[@i].UnitPrice" value="@details[i].UnitPrice" required />
@@ -106,13 +113,13 @@
                                     @if (details.Count == 0)
                                     {
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted py-3">Nhấn “Thêm dòng” để bắt đầu</td>
+                                            <td colspan="6" class="text-center text-muted py-3">Nhấn “Thêm dòng” để bắt đầu</td>
                                         </tr>
                                     }
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="3" class="text-end"><strong>TỔNG CỘNG:</strong></td>
+                                        <td colspan="4" class="text-end"><strong>TỔNG CỘNG:</strong></td>
                                         <td class="text-end"><strong class="text-success" id="grandTotal">0</strong></td>
                                         <td></td>
                                     </tr>
@@ -136,7 +143,7 @@
     <script>
         (function () {
             const drugs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                (drugs ?? new List<PharmaWebApp.Models.DrugViewModel>()).Select(d => new { id = d.Id, name = d.Name, code = d.Code })
+                (drugs ?? new List<PharmaWebApp.Models.DrugViewModel>()).Select(d => new { id = d.Id, name = d.Name, code = d.Code, packSize = d.PackSize })
             ));
 
             const tbody = document.querySelector('#detailsTable tbody');
@@ -180,11 +187,17 @@
                     <td>
                         <select class="form-select form-select-sm" name="Details[${index}].DrugId" required>
                             <option value="0">-- Chọn thuốc --</option>
-                            ${drugs.map(d => `<option value="${d.id}">${d.name} (${d.code})</option>`).join('')}
+                            ${drugs.map(d => `<option value="${d.id}" data-packsize="${d.packSize || 1}">${d.name} (${d.code})</option>`).join('')}
                         </select>
                     </td>
                     <td>
                         <input class="form-control form-control-sm text-center qty" type="number" min="1" name="Details[${index}].Quantity" value="1" required />
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm unit-select" name="Details[${index}].UnitType">
+                            <option value="box">Hộp</option>
+                            <option value="pill">Viên</option>
+                        </select>
                     </td>
                     <td>
                         <input class="form-control form-control-sm text-end price" type="number" step="1" min="0" name="Details[${index}].UnitPrice" value="0" required />
@@ -194,11 +207,11 @@
                         <button type="button" class="btn btn-sm btn-outline-danger removeRowBtn"><i class="bi bi-x"></i></button>
                     </td>
                 `;
-                return tr;
+               return tr;
             }
 
             function ensureEmptyRowMessageRemoved() {
-                const msgRow = tbody.querySelector('tr td[colspan="5"]');
+                const msgRow = tbody.querySelector('tr td[colspan="6"]');
                 if (msgRow) msgRow.closest('tr').remove();
             }
 

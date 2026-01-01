@@ -33,10 +33,19 @@ namespace SaleService.Controllers
 
         [HttpGet]
         [Authorize] // Allow authenticated requests including service tokens
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(int? staffId = null)
         {
-            var invoices = await _db.SaleInvoices
+            var query = _db.SaleInvoices
                 .Include(x => x.Details)
+                .AsQueryable();
+
+            // Filter by staffId if provided
+            if (staffId.HasValue && staffId.Value > 0)
+            {
+                query = query.Where(x => x.StaffId == staffId.Value);
+            }
+
+            var invoices = await query
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync();
 
@@ -89,7 +98,7 @@ namespace SaleService.Controllers
                 if (drug == null) return BadRequest($"Drug {i.DrugId} not found");
 
                 var unit = string.IsNullOrWhiteSpace(i.UnitType) ? "pill" : i.UnitType;
-                var price = unit == "box" ? drug.BoxPrice : drug.SellPrice;
+                var price = unit == "box" ? drug.BoxPrice : drug.SellPricePerPill;
 
                 invoice.Details.Add(new SaleInvoiceDetail
                 {

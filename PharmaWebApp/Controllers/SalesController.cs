@@ -240,6 +240,61 @@ namespace PharmaWebApp.Controllers
 
             return Ok(new { message = "Thanh toán thành công" });
         }
+
+        /* ================= XÓA HÓA ĐƠN (ADMIN ONLY) ================= */
+
+        [Authorize(Roles = "Owner")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var (client, url) = await SaleClientAsync();
+
+                var invoice = await client
+                    .GetFromJsonAsync<SaleInvoiceDisplayViewModel>($"{url}/api/sales/{id}");
+
+                if (invoice == null)
+                {
+                    TempData["ErrorMessage"] = "Không tìm thấy hóa đơn";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                return View(invoice);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Lỗi: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Owner")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id, SaleInvoiceDisplayViewModel model)
+        {
+            try
+            {
+                var (client, url) = await SaleClientAsync();
+
+                var resp = await client.DeleteAsync($"{url}/api/sales/{id}");
+
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var errorMsg = await resp.Content.ReadAsStringAsync();
+                    TempData["ErrorMessage"] = $"Không thể xóa hóa đơn: {errorMsg}";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                TempData["SuccessMessage"] = "Xóa hóa đơn thành công";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Lỗi khi xóa hóa đơn: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
+        }
     }
 
     /* ================= VIEWMODEL PHỤ ================= */

@@ -3,4 +3,3 @@
 GET {{AuthService_HostAddress}}/weatherforecast/
 Accept: application/json
 
-###

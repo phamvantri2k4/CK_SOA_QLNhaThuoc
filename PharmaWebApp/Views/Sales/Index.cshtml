@@ -82,6 +82,7 @@
                         <th>Nhân viên</th>
                         <th>Trạng thái</th>
                         <th>Số mặt hàng</th>
+                        <th>Số lượng</th>
                         <th>Tổng tiền</th>
                         <th>Thao tác</th>
                     </tr>
@@ -89,6 +90,9 @@
                 <tbody>
                     @foreach (var invoice in Model.Items)
                     {
+                        var totalBoxes = invoice.Items.Where(i => i.UnitType == "box").Sum(i => i.Quantity);
+                        var totalPills = invoice.Items.Where(i => i.UnitType == "pill").Sum(i => i.Quantity);
+                        
                         <tr>
                             <td><strong>#@invoice.Id</strong></td>
                             <td>@invoice.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
@@ -115,20 +119,32 @@
                                 }
                             </td>
                             <td>@invoice.Items.Count</td>
+                            <td>
+                                @if (totalBoxes > 0)
+                                {
+                                    <span class="badge bg-primary">@totalBoxes hộp</span>
+                                }
+                                @if (totalPills > 0)
+                                {
+                                    <span class="badge bg-info">@totalPills viên</span>
+                                }
+                            </td>
                             <td><strong class="text-success">@FormatVND(invoice.TotalAmount) VNĐ</strong></td>
                             <td>
-                                <a asp-action="Details" asp-route-id="@invoice.Id" class="btn btn-sm btn-info">
-                                    <i class="bi bi-eye"></i> Chi tiết
-                                </a>
-                                @if (User.IsInRole("Owner"))
-                                {
-                                    <a asp-action="Edit" asp-route-id="@invoice.Id" class="btn btn-sm btn-warning">
-                                        <i class="bi bi-pencil"></i> Sửa
+                                <div class="btn-group" role="group">
+                                    <a asp-action="Details" asp-route-id="@invoice.Id" class="btn btn-sm btn-info" title="Xem chi tiết">
+                                        <i class="bi bi-eye"></i>
                                     </a>
-                                    <a asp-action="Delete" asp-route-id="@invoice.Id" class="btn btn-sm btn-danger">
-                                        <i class="bi bi-trash"></i> Xóa
-                                    </a>
-                                }
+                                    @if (User.IsInRole("Owner"))
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@invoice.Id" class="btn btn-sm btn-warning" title="Sửa">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@invoice.Id" class="btn btn-sm btn-danger" title="Xóa">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    }
+                                </div>
                             </td>
                         </tr>
                     }

@@ -349,7 +349,6 @@ D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\o
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\obj\Debug\net8.0\staticwebassets.build.json.cache
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\obj\Debug\net8.0\staticwebassets.development.json
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\obj\Debug\net8.0\staticwebassets.build.endpoints.json
-D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\obj\Debug\net8.0\Reportin.FB5AD4DB.Up2Date
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\obj\Debug\net8.0\ReportingService.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\obj\Debug\net8.0\refint\ReportingService.dll

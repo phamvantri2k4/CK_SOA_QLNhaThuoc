@@ -70,7 +70,7 @@ namespace SaleService.Model
         public string Unit { get; set; } = string.Empty;
         public int PackSize { get; set; } = 1;
         public decimal ImportPrice { get; set; }
-        public decimal SellPrice { get; set; }
+        public decimal SellPricePerPill { get; set; }
         public decimal BoxPrice { get; set; }
     }
 

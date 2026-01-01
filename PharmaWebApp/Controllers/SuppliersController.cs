@@ -152,7 +152,8 @@ namespace PharmaWebApp.Controllers
         public async Task<IActionResult> CreateOrder(CreatePurchaseOrderViewModel m)
         {
             ViewBag.Suppliers = await GetSuppliersAsync();
-            ViewBag.Drugs = await GetDrugsAsync();
+            var drugs = await GetDrugsAsync();
+            ViewBag.Drugs = drugs;
 
             m.Details = m.Details
                 .Where(d => d.DrugId > 0 && d.Quantity > 0 && d.UnitPrice > 0)
@@ -166,15 +167,31 @@ namespace PharmaWebApp.Controllers
 
             var (client, url) = await SupplierClientAsync();
 
+            // Build details với convert hộp sang viên nếu cần
+            var details = m.Details.Select(d =>
+            {
+                var drug = drugs.FirstOrDefault(dr => dr.Id == d.DrugId);
+                var packSize = drug?.PackSize ?? 1;
+                var quantityInPills = d.Quantity;
+
+                // Nếu nhập theo hộp, convert sang viên
+                if (d.UnitType == "box")
+                {
+                    quantityInPills = d.Quantity * packSize;
+                }
+
+                return new
+                {
+                    d.DrugId,
+                    Quantity = quantityInPills,  // Luôn lưu theo viên vào kho
+                    d.UnitPrice
+                };
+            });
+
             await client.PostAsJsonAsync($"{url}/api/supplier/orders", new
             {
                 supplierId = m.SupplierId,
-                details = m.Details.Select(d => new
-                {
-                    d.DrugId,
-                    d.Quantity,
-                    d.UnitPrice
-                })
+                details
             });
 
             TempData["SuccessMessage"] = "Tạo đơn nhập thành công";

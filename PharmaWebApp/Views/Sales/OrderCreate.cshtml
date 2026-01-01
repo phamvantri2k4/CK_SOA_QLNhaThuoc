@@ -407,15 +407,27 @@
                                     var boxQty = pack > 0 ? (stock / pack) : 0;
                                     var pillRemain = pack > 0 ? (stock % pack) : stock;
                                 }
-                                <div class="mt-1" style="font-size: 11px;">
+                                <div class="mt-2 p-2 bg-light rounded" style="font-size: 12px;">
                                     @if (stock > 0)
                                     {
-                                        <span class="text-success">Tồn: @stock viên</span>
-                                        <span class="text-muted">(@boxQty hộp + @pillRemain viên)</span>
+                                        <div class="mb-1">
+                                            <span class="text-success fw-bold">✓ Còn hàng:</span>
+                                        </div>
+                                        <div class="d-flex gap-2 mb-1">
+                                            @if (boxQty > 0)
+                                            {
+                                                <span class="badge bg-primary">@boxQty hộp</span>
+                                            }
+                                            @if (pillRemain > 0)
+                                            {
+                                                <span class="badge bg-info">@pillRemain viên lẻ</span>
+                                            }
+                                        </div>
+                                        <small class="text-muted">Tổng: @stock viên (@drug.PackSize viên/hộp)</small>
                                     }
                                     else
                                     {
-                                        <span class="text-danger fw-bold">Hết hàng</span>
+                                        <span class="text-danger fw-bold">✗ Hết hàng</span>
                                     }
                                 </div>
                             </div>
@@ -713,7 +725,15 @@
             return;
         }
 
-        const unitType = getDefaultUnitType(drug);
+        // Chọn đơn vị thông minh: Nếu có BoxPrice và đủ 1 hộp -> box, ngược lại -> pill
+        let unitType = getDefaultUnitType(drug);
+        const packSize = parseInt(drug.packSize || 1);
+        
+        // Nếu chọn box nhưng không đủ 1 hộp, chuyển sang pill
+        if (unitType === 'box' && stock < packSize) {
+            unitType = 'pill';
+        }
+        
         addToCart(drug, unitType, 1);
     }
 
