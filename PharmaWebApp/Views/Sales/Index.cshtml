@@ -137,10 +137,7 @@
                                     </a>
                                     @if (User.IsInRole("Owner"))
                                     {
-                                        <a asp-action="Edit" asp-route-id="@invoice.Id" class="btn btn-sm btn-warning" title="Sửa">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <a asp-action="Delete" asp-route-id="@invoice.Id" class="btn btn-sm btn-danger" title="Xóa">
+                                        <a asp-action="Delete" asp-route-id="@invoice.Id" class="btn btn-sm btn-danger" title="Xóa hóa đơn">
                                             <i class="bi bi-trash"></i>
                                         </a>
                                     }

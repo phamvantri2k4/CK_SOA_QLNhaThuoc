@@ -359,3 +359,4 @@ D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\AuthService\obj\De
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\AuthService\obj\Debug\net8.0\AuthService.pdb
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\AuthService\obj\Debug\net8.0\AuthService.genruntimeconfig.cache
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\AuthService\obj\Debug\net8.0\ref\AuthService.dll
+D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\AuthService\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
