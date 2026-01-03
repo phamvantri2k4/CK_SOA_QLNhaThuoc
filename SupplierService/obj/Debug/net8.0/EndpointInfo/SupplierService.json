@@ -236,6 +236,11 @@
           "unitPrice": {
             "type": "number",
             "format": "double"
+          },
+          "expiryDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false

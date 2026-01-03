@@ -60,5 +60,6 @@ namespace PharmaWebApp.Models
         public int Quantity { get; set; }
         public string UnitType { get; set; } = "box"; // "box" hoặc "pill"
         public decimal UnitPrice { get; set; }
+        public DateTime? ExpiryDate { get; set; } // Hạn sử dụng của lô hàng
     }
 }

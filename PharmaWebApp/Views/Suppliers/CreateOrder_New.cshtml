@@ -6,15 +6,44 @@
     var details = Model.Details ?? new List<PharmaWebApp.Models.CreatePurchaseOrderDetailViewModel>();
 }
 
+<style>
+    .item-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+        border-left: 4px solid var(--app-primary);
+        position: relative;
+    }
+    .item-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .remove-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+    .input-group-text {
+        background: white;
+        border-left: none;
+    }
+    .form-control:focus + .input-group-text {
+        border-color: #86b7fe;
+    }
+    .total-display {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--app-primary);
+    }
+</style>
+
 <div class="container-fluid py-2">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <div class="app-page-title"><i class="bi bi-plus-circle"></i> @ViewData["Title"]</div>
             <div class="text-muted">Chọn nhà cung cấp và thêm thuốc vào đơn nhập</div>
         </div>
-        <div class="d-flex gap-2">
-            <a class="btn btn-outline-secondary" asp-action="Orders"><i class="bi bi-arrow-left"></i> Quay lại</a>
-        </div>
+        <a class="btn btn-outline-secondary" asp-action="Orders"><i class="bi bi-arrow-left"></i> Quay lại</a>
     </div>
 
     @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
@@ -37,23 +66,34 @@
                 <div class="card">
                     <div class="card-header"><strong>Nhà cung cấp</strong></div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label">Chọn NCC <span class="text-danger">*</span></label>
-                            <select class="form-select" name="SupplierId" required>
-                                <option value="0">-- Chọn nhà cung cấp --</option>
-                                @foreach (var s in suppliers)
-                                {
-                                    <option value="@s.Id" selected="@(Model.SupplierId == s.Id)">@s.Name</option>
-                                }
-                            </select>
-                            <span asp-validation-for="SupplierId" class="text-danger"></span>
-                        </div>
+                        <label class="form-label">Chọn NCC <span class="text-danger">*</span></label>
+                        <select class="form-select" name="SupplierId" required>
+                            <option value="0">-- Chọn nhà cung cấp --</option>
+                            @foreach (var s in suppliers)
+                            {
+                                <option value="@s.Id" selected="@(Model.SupplierId == s.Id)">@s.Name</option>
+                            }
+                        </select>
+                        <span asp-validation-for="SupplierId" class="text-danger"></span>
 
-                        <div class="alert alert-info mb-0">
-                            <div class="small">Gợi ý:</div>
-                            <div class="small">- Thêm thuốc từ bảng bên phải</div>
-                            <div class="small">- Nhập <strong>Số lượng</strong>, <strong>Đơn giá</strong></div>
+                        <div class="alert alert-info mt-3 mb-0">
+                            <div class="small"><strong>Gợi ý:</strong></div>
+                            <div class="small">• Thêm thuốc bằng nút "+ Thêm thuốc"</div>
+                            <div class="small">• Nhập đầy đủ thông tin mỗi dòng</div>
                         </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header"><strong>Tổng cộng</strong></div>
+                    <div class="card-body text-center">
+                        <div class="total-display" id="grandTotal">0 ₫</div>
+                    </div>
+                    <div class="card-footer d-flex gap-2">
+                        <a class="btn btn-outline-secondary flex-fill" asp-action="Orders">Hủy</a>
+                        <button type="submit" class="btn btn-success flex-fill">
+                            <i class="bi bi-check-circle"></i> Tạo đơn
+                        </button>
                     </div>
                 </div>
             </div>
@@ -62,75 +102,81 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <strong>Chi tiết thuốc nhập</strong>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="addRowBtn">
-                            <i class="bi bi-plus"></i> Thêm dòng
+                        <button type="button" class="btn btn-sm btn-primary" id="addRowBtn">
+                            <i class="bi bi-plus"></i> Thêm thuốc
                         </button>
                     </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0" id="detailsTable">
-                                <thead>
-                                    <tr>
-                                        <th style="min-width: 240px;">Thuốc</th>
-                                        <th class="text-center" style="width: 100px;">Số lượng</th>
-                                        <th class="text-center" style="width: 90px;">Đơn vị</th>
-                                        <th class="text-end" style="width: 140px;">Đơn giá</th>
-                                        <th class="text-end" style="width: 120px;">Thành tiền</th>
-                                        <th class="text-end" style="width: 80px;"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @for (int i = 0; i < details.Count; i++)
-                                    {
-                                        <tr>
-                                            <td>
-                                                <select class="form-select form-select-sm" name="Details[@i].DrugId" required>
-                                                    <option value="0">-- Chọn thuốc --</option>
-                                                    @foreach (var d in drugs)
-                                                    {
-                                                        <option value="@d.Id" data-packsize="@d.PackSize" selected="@(details[i].DrugId == d.Id)">@d.Name (@d.Code)</option>
-                                                    }
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <input class="form-control form-control-sm text-center qty" type="number" min="1" name="Details[@i].Quantity" value="@details[i].Quantity" required />
-                                            </td>
-                                            <td>
-                                                <select class="form-select form-select-sm unit-select" name="Details[@i].UnitType">
-                                                    <option value="box">Hộp</option>
-                                                    <option value="pill">Viên</option>
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <input class="form-control form-control-sm text-end price" type="number" step="1" min="0" name="Details[@i].UnitPrice" value="@details[i].UnitPrice" required />
-                                            </td>
-                                            <td class="text-end fw-semibold line-total">0</td>
-                                            <td class="text-end">
-                                                <button type="button" class="btn btn-sm btn-outline-danger removeRowBtn"><i class="bi bi-x"></i></button>
-                                            </td>
-                                        </tr>
-                                    }
-                                    @if (details.Count == 0)
-                                    {
-                                        <tr>
-                                            <td colspan="6" class="text-center text-muted py-3">Nhấn “Thêm dòng” để bắt đầu</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td colspan="4" class="text-end"><strong>TỔNG CỘNG:</strong></td>
-                                        <td class="text-end"><strong class="text-success" id="grandTotal">0</strong></td>
-                                        <td></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
+                    <div class="card-body" id="itemsContainer">
+                        @if (details.Count == 0)
+                        {
+                            <div class="text-center text-muted py-5" id="emptyMessage">
+                                <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                                <div class="mt-2">Nhấn "Thêm thuốc" để bắt đầu</div>
+                            </div>
+                        }
+                        else
+                        {
+                            @for (int i = 0; i < details.Count; i++)
+                            {
+                                <div class="item-card">
+                                    <button type="button" class="btn btn-sm btn-danger remove-btn removeRowBtn">
+                                        <i class="bi bi-x"></i>
+                                    </button>
 
-                    <div class="card-footer d-flex justify-content-end gap-2">
-                        <a class="btn btn-outline-secondary" asp-action="Orders">Hủy</a>
-                        <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> Tạo đơn & cập nhật kho</button>
+                                    <div class="row g-3">
+                                        <div class="col-md-12">
+                                            <label class="form-label">Thuốc <span class="text-danger">*</span></label>
+                                            <select class="form-select" name="Details[@i].DrugId" required>
+                                                <option value="0">-- Chọn thuốc --</option>
+                                                @foreach (var d in drugs)
+                                                {
+                                                    <option value="@d.Id" data-packsize="@d.PackSize" selected="@(details[i].DrugId == d.Id)">
+                                                        @d.Name (@d.Code)
+                                                    </option>
+                                                }
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label">Số lượng <span class="text-danger">*</span></label>
+                                            <input class="form-control qty" type="number" min="1" name="Details[@i].Quantity" 
+                                                   value="@details[i].Quantity" required />
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label">Đơn vị</label>
+                                            <select class="form-select unit-select" name="Details[@i].UnitType">
+                                                <option value="box">Hộp</option>
+                                                <option value="pill">Viên</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label">Hạn sử dụng</label>
+                                            <input class="form-control" type="date" name="Details[@i].ExpiryDate" 
+                                                   value="@details[i].ExpiryDate?.ToString("yyyy-MM-dd")" />
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label">Đơn giá <span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <input class="form-control price" type="number" step="1" min="0" 
+                                                       name="Details[@i].UnitPrice" value="@details[i].UnitPrice" required />
+                                                <span class="input-group-text">₫</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label">Thành tiền</label>
+                                            <div class="input-group">
+                                                <input class="form-control line-total" type="text" readonly style="background: #e9ecef;" value="0" />
+                                                <span class="input-group-text">₫</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
                     </div>
                 </div>
             </div>
@@ -146,9 +192,10 @@
                 (drugs ?? new List<PharmaWebApp.Models.DrugViewModel>()).Select(d => new { id = d.Id, name = d.Name, code = d.Code, packSize = d.PackSize })
             ));
 
-            const tbody = document.querySelector('#detailsTable tbody');
+            const container = document.getElementById('itemsContainer');
             const addRowBtn = document.getElementById('addRowBtn');
             const grandTotalEl = document.getElementById('grandTotal');
+            const emptyMsg = document.getElementById('emptyMessage');
 
             function formatVND(n) {
                 return (n || 0).toLocaleString('vi-VN') + ' ₫';
@@ -156,24 +203,25 @@
 
             function recalc() {
                 let total = 0;
-                tbody.querySelectorAll('tr').forEach(tr => {
-                    const qtyInput = tr.querySelector('.qty');
-                    const priceInput = tr.querySelector('.price');
-                    const totalEl = tr.querySelector('.line-total');
-                    if (!qtyInput || !priceInput || !totalEl) return;
+                container.querySelectorAll('.item-card').forEach(card => {
+                    const qtyInput = card.querySelector('.qty');
+                    const priceInput = card.querySelector('.price');
+                    const totalInput = card.querySelector('.line-total');
+                    if (!qtyInput || !priceInput || !totalInput) return;
+                    
                     const qty = parseInt(qtyInput.value || '0', 10);
                     const price = parseInt((priceInput.value || '0').toString().replace(/[^\d]/g, ''), 10) || 0;
                     const line = (qty > 0 && price > 0) ? qty * price : 0;
-                    totalEl.textContent = formatVND(line);
+                    totalInput.value = formatVND(line);
                     total += line;
                 });
                 grandTotalEl.textContent = formatVND(total);
             }
 
             function reindex() {
-                const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.querySelector('select'));
-                rows.forEach((tr, i) => {
-                    tr.querySelectorAll('select,input').forEach(el => {
+                const cards = Array.from(container.querySelectorAll('.item-card'));
+                cards.forEach((card, i) => {
+                    card.querySelectorAll('select,input').forEach(el => {
                         const name = el.getAttribute('name');
                         if (!name) return;
                         el.setAttribute('name', name.replace(/Details\[\d+\]/g, `Details[${i}]`));
@@ -181,67 +229,93 @@
                 });
             }
 
-            function createRow(index) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
-                        <select class="form-select form-select-sm" name="Details[${index}].DrugId" required>
-                            <option value="0">-- Chọn thuốc --</option>
-                            ${drugs.map(d => `<option value="${d.id}" data-packsize="${d.packSize || 1}">${d.name} (${d.code})</option>`).join('')}
-                        </select>
-                    </td>
-                    <td>
-                        <input class="form-control form-control-sm text-center qty" type="number" min="1" name="Details[${index}].Quantity" value="1" required />
-                    </td>
-                    <td>
-                        <select class="form-select form-select-sm unit-select" name="Details[${index}].UnitType">
-                            <option value="box">Hộp</option>
-                            <option value="pill">Viên</option>
-                        </select>
-                    </td>
-                    <td>
-                        <input class="form-control form-control-sm text-end price" type="number" step="1" min="0" name="Details[${index}].UnitPrice" value="0" required />
-                    </td>
-                    <td class="text-end fw-semibold line-total">0</td>
-                    <td class="text-end">
-                        <button type="button" class="btn btn-sm btn-outline-danger removeRowBtn"><i class="bi bi-x"></i></button>
-                    </td>
-                `;
-               return tr;
-            }
+            function createCard(index) {
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                card.innerHTML = `
+                    <button type="button" class="btn btn-sm btn-danger remove-btn removeRowBtn">
+                        <i class="bi bi-x"></i>
+                    </button>
 
-            function ensureEmptyRowMessageRemoved() {
-                const msgRow = tbody.querySelector('tr td[colspan="6"]');
-                if (msgRow) msgRow.closest('tr').remove();
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Thuốc <span class="text-danger">*</span></label>
+                            <select class="form-select" name="Details[${index}].DrugId" required>
+                                <option value="0">-- Chọn thuốc --</option>
+                                ${drugs.map(d => `<option value="${d.id}" data-packsize="${d.packSize || 1}">${d.name} (${d.code})</option>`).join('')}
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Số lượng <span class="text-danger">*</span></label>
+                            <input class="form-control qty" type="number" min="1" name="Details[${index}].Quantity" value="1" required />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Đơn vị</label>
+                            <select class="form-select unit-select" name="Details[${index}].UnitType">
+                                <option value="box">Hộp</option>
+                                <option value="pill">Viên</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Hạn sử dụng</label>
+                            <input class="form-control" type="date" name="Details[${index}].ExpiryDate" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Đơn giá <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input class="form-control price" type="number" step="1" min="0" name="Details[${index}].UnitPrice" value="0" required />
+                                <span class="input-group-text">₫</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Thành tiền</label>
+                            <div class="input-group">
+                                <input class="form-control line-total" type="text" readonly style="background: #e9ecef;" value="0 ₫" />
+                                <span class="input-group-text">₫</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return card;
             }
 
             addRowBtn.addEventListener('click', function () {
-                ensureEmptyRowMessageRemoved();
-                const currentRows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.querySelector('select')).length;
-                tbody.appendChild(createRow(currentRows));
+                if (emptyMsg) emptyMsg.remove();
+                const currentCards = container.querySelectorAll('.item-card').length;
+                container.appendChild(createCard(currentCards));
                 reindex();
                 recalc();
             });
 
-            tbody.addEventListener('input', function (e) {
+            container.addEventListener('input', function (e) {
                 if (e.target.classList.contains('qty') || e.target.classList.contains('price')) {
                     recalc();
                 }
             });
 
-            tbody.addEventListener('click', function (e) {
+            container.addEventListener('click', function (e) {
                 const btn = e.target.closest('.removeRowBtn');
                 if (!btn) return;
-                const tr = btn.closest('tr');
-                tr.remove();
+                const card = btn.closest('.item-card');
+                card.remove();
                 reindex();
                 recalc();
 
-                const hasRows = Array.from(tbody.querySelectorAll('tr')).some(r => r.querySelector('select'));
-                if (!hasRows) {
-                    const empty = document.createElement('tr');
-                    empty.innerHTML = `<td colspan="5" class="text-center text-muted py-3">Nhấn “Thêm dòng” để bắt đầu</td>`;
-                    tbody.appendChild(empty);
+                const hasCards = container.querySelectorAll('.item-card').length > 0;
+                if (!hasCards) {
+                    const empty = document.createElement('div');
+                    empty.id = 'emptyMessage';
+                    empty.className = 'text-center text-muted py-5';
+                    empty.innerHTML = `
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <div class="mt-2">Nhấn "Thêm thuốc" để bắt đầu</div>
+                    `;
+                    container.appendChild(empty);
                 }
             });
 

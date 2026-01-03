@@ -126,10 +126,12 @@ namespace SupplierService.Controllers
                     DrugId = d.DrugId,
                     Quantity = d.Quantity,
                     UnitPrice = d.UnitPrice
+                    // Không lưu ExpiryDate vì đây là thông tin của lô hàng, không phải đơn hàng
                 };
                 _context.PurchaseOrderDetails.Add(detail);
 
-                var ok = await _inventoryClient.ImportToInventory(d.DrugId, d.Quantity);
+                // Truyền ExpiryDate vào InventoryService (nếu có)
+                var ok = await _inventoryClient.ImportToInventory(d.DrugId, d.Quantity, d.ExpiryDate);
                 if (!ok)
                 {
                     return StatusCode(502, "Tạo đơn nhập thành công nhưng cập nhật kho thất bại");

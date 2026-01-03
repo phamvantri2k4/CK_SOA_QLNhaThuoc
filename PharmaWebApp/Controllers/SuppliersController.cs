@@ -184,7 +184,8 @@ namespace PharmaWebApp.Controllers
                 {
                     d.DrugId,
                     Quantity = quantityInPills,  // Luôn lưu theo viên vào kho
-                    d.UnitPrice
+                    d.UnitPrice,
+                    d.ExpiryDate  // Thêm HSD
                 };
             });
 

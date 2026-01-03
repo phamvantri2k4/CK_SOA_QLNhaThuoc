@@ -14,6 +14,7 @@ namespace SupplierService.Models
         public int Quantity { get; set; }
         [Column(TypeName = "decimal(18,2)")]
         public decimal UnitPrice { get; set; }
+        public DateTime? ExpiryDate { get; set; } // Nhận từ form, pass-through vào Inventory
     }
 
     public class Supplier

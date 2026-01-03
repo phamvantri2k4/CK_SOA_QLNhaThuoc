@@ -140,6 +140,7 @@
             text-decoration: underline;
         }
 
+
         .alert {
             border-radius: 10px;
             border: none;
@@ -147,14 +148,6 @@
             margin-bottom: 20px;
         }
 
-        .password-strength {
-            margin-top: 5px;
-            font-size: 12px;
-        }
-
-        .strength-weak { color: #dc3545; }
-        .strength-medium { color: #ffc107; }
-        .strength-strong { color: #28a745; }
 
         .shake {
             animation: shake 0.5s;
@@ -173,38 +166,6 @@
         @@keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-
-        .requirements {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            font-size: 13px;
-        }
-
-        .requirements h6 {
-            margin-bottom: 10px;
-            color: #495057;
-            font-weight: 600;
-        }
-
-        .requirements ul {
-            margin-bottom: 0;
-            padding-left: 20px;
-        }
-
-        .requirements li {
-            margin-bottom: 5px;
-            color: #6c757d;
-        }
-
-        .requirements li.valid {
-            color: #28a745;
-        }
-
-        .requirements li.invalid {
-            color: #dc3545;
         }
     </style>
 </head>
@@ -229,17 +190,7 @@
             <form asp-action="Register" method="post" id="registerForm">
                 @Html.AntiForgeryToken()
                 
-                <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display: none;"></div>
-
-                <div class="requirements">
-                    <h6><i class="bi bi-info-circle me-2"></i>Yêu cầu mật khẩu:</h6>
-                    <ul id="passwordRequirements">
-                        <li id="req-length">Ít nhất 6 ký tự</li>
-                        <li id="req-uppercase">Chứa chữ hoa (A-Z)</li>
-                        <li id="req-lowercase">Chứa chữ thường (a-z)</li>
-                        <li id="req-number">Chứa số (0-9)</li>
-                    </ul>
-                </div>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                 <div class="form-floating">
                     <input asp-for="FullName" class="form-control" placeholder="Họ tên" required />
@@ -263,7 +214,6 @@
                         <i class="bi bi-lock me-2"></i>Mật khẩu
                     </label>
                     <span asp-validation-for="Password" class="text-danger"></span>
-                    <div class="password-strength" id="passwordStrength"></div>
                 </div>
 
                 <div class="form-floating">
@@ -272,13 +222,6 @@
                         <i class="bi bi-lock-fill me-2"></i>Xác nhận mật khẩu
                     </label>
                     <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-                </div>
-
-                <div class="form-check mb-4">
-                    <input type="checkbox" class="form-check-input" id="agreeTerms" required />
-                    <label class="form-check-label" for="agreeTerms">
-                        Tôi đồng ý với <a href="#" class="text-primary">điều khoản sử dụng</a> và <a href="#" class="text-primary">chính sách bảo mật</a>
-                    </label>
                 </div>
 
                 <button type="submit" class="btn btn-register" id="submitBtn">
@@ -301,71 +244,6 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Kiểm tra độ mạnh mật khẩu
-            function checkPasswordStrength(password) {
-                let strength = 0;
-                let feedback = [];
-
-                if (password.length >= 6) {
-                    strength++;
-                    $('#req-length').removeClass('invalid').addClass('valid');
-                } else {
-                    $('#req-length').removeClass('valid').addClass('invalid');
-                }
-
-                if (/[A-Z]/.test(password)) {
-                    strength++;
-                    $('#req-uppercase').removeClass('invalid').addClass('valid');
-                } else {
-                    $('#req-uppercase').removeClass('valid').addClass('invalid');
-                }
-
-                if (/[a-z]/.test(password)) {
-                    strength++;
-                    $('#req-lowercase').removeClass('invalid').addClass('valid');
-                } else {
-                    $('#req-lowercase').removeClass('valid').addClass('invalid');
-                }
-
-                if (/[0-9]/.test(password)) {
-                    strength++;
-                    $('#req-number').removeClass('invalid').addClass('valid');
-                } else {
-                    $('#req-number').removeClass('valid').addClass('invalid');
-                }
-
-                let strengthText = '';
-                let strengthClass = '';
-
-                if (strength <= 1) {
-                    strengthText = 'Yếu';
-                    strengthClass = 'strength-weak';
-                } else if (strength <= 3) {
-                    strengthText = 'Trung bình';
-                    strengthClass = 'strength-medium';
-                } else {
-                    strengthText = 'Mạnh';
-                    strengthClass = 'strength-strong';
-                }
-
-                return { text: strengthText, class: strengthClass };
-            }
-
-            // Kiểm tra mật khẩu khi nhập
-            $('#password').on('input', function() {
-                const password = $(this).val();
-                const strength = checkPasswordStrength(password);
-                
-                $('#passwordStrength').removeClass('strength-weak strength-medium strength-strong')
-                    .addClass(strength.class)
-                    .text('Độ mạnh: ' + strength.text);
-
-                // Kiểm tra xác nhận mật khẩu
-                if ($('#confirmPassword').val()) {
-                    validatePasswordMatch();
-                }
-            });
-
             // Kiểm tra xác nhận mật khẩu
             function validatePasswordMatch() {
                 const password = $('#password').val();
@@ -379,37 +257,14 @@
             }
 
             $('#confirmPassword').on('input', validatePasswordMatch);
-
-            // Xử lý validation summary
-            $('form').submit(function(e) {
-                if ($(this).find('.input-validation-error').length > 0) {
-                    $('.register-container').addClass('shake');
-                    setTimeout(function() {
-                        $('.register-container').removeClass('shake');
-                    }, 500);
+            $('#password').on('input', function() {
+                if ($('#confirmPassword').val()) {
+                    validatePasswordMatch();
                 }
             });
 
-            // Hiển thị validation errors
-            if ($('.validation-summary-errors').length > 0) {
-                $('.validation-summary-errors').show();
-            }
-
             // Focus vào input đầu tiên
             $('input:visible:first').focus();
-
-            // Hiệu ứng hover cho button
-            $('.btn-register').hover(
-                function() {
-                    $(this).css('transform', 'translateY(-2px)');
-                },
-                function() {
-                    $(this).css('transform', 'translateY(0)');
-                }
-            );
-
-            // Khởi tạo requirements
-            $('#passwordRequirements li').addClass('invalid');
         });
     </script>
 </body>

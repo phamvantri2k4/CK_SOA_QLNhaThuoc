@@ -357,4 +357,3 @@ D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\CustomerService\ob
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\CustomerService\obj\Debug\net8.0\CustomerService.pdb
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\CustomerService\obj\Debug\net8.0\CustomerService.genruntimeconfig.cache
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\CustomerService\obj\Debug\net8.0\ref\CustomerService.dll
-D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\CustomerService\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
