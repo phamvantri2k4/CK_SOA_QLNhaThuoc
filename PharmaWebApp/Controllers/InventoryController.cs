@@ -10,12 +10,12 @@ namespace PharmaWebApp.Controllers
     [Authorize(Policy = "OwnerOnly")]
     public class InventoryController : BaseController
     {
-        private readonly IServiceResolver _resolver;
+        private readonly ServiceUrlHelper _serviceUrl;
         private readonly IConfiguration _config;
 
-        public InventoryController(IServiceResolver resolver, IConfiguration config)
+        public InventoryController(ServiceUrlHelper serviceUrl, IConfiguration config)
         {
-            _resolver = resolver;
+            _serviceUrl = serviceUrl;
             _config = config;
         }
 
@@ -80,7 +80,9 @@ namespace PharmaWebApp.Controllers
 
         private async Task<(HttpClient client, string url)> GetClientAsync(string serviceName)
         {
-            var url = await _resolver.GetRequiredAsync(serviceName);
+            var url = serviceName == "InventoryService" ? await _serviceUrl.GetInventoryServiceUrlAsync() :
+                      serviceName == "DrugService" ? await _serviceUrl.GetDrugServiceUrlAsync() :
+                      await _serviceUrl.GetSupplierServiceUrlAsync();
             return (CreateAuthenticatedHttpClient(), url);
         }
 

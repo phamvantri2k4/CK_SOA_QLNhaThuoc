@@ -90,6 +90,18 @@
           }
         }
       }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "InventoryService"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     }
   },
   "components": {

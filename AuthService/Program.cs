@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Shared;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,8 +40,6 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
-
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -60,39 +57,78 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
-// Seed data: Tạo tài khoản admin mặc định nếu chưa có
-using (var scope = app.Services.CreateScope())
+// Health check endpoint
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "AuthService" }));
+
+// ===== ĐĂNG KÝ VÀO CONSUL =====
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+
+lifetime.ApplicationStarted.Register(() =>
 {
-    var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
-    try
+    Task.Run(async () =>
     {
-        // Kiểm tra xem đã có user nào chưa
-        if (!await db.Users.AnyAsync())
+        try
         {
-            var adminUser = new User
+            await Task.Delay(1000);
+
+            var consulClient = new Consul.ConsulClient(config =>
             {
-                Username = "admin",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-                FullName = "Quản trị viên",
-                Role = "Owner",
-                IsActive = true
+                config.Address = new Uri("http://localhost:8500");
+            });
+
+            var server = app.Services.GetRequiredService<IServer>();
+            var addressFeature = server.Features.Get<IServerAddressesFeature>();
+            var address = addressFeature?.Addresses.FirstOrDefault(a => a.StartsWith("http://")) ?? "http://localhost:5004";
+            
+            var uri = new Uri(address);
+            var servicePort = uri.Port;
+            var serviceName = "AuthService";
+            var serviceId = $"{serviceName}-{Guid.NewGuid()}";
+
+            Console.WriteLine($"🔍 Detected {serviceName} at: {address}");
+
+            var registration = new Consul.AgentServiceRegistration
+            {
+                ID = serviceId,
+                Name = serviceName,
+                Address = "localhost",
+                Port = servicePort,
+                Check = new Consul.AgentServiceCheck
+                {
+                    HTTP = $"http://localhost:{servicePort}/health",
+                    Interval = TimeSpan.FromSeconds(10),
+                    Timeout = TimeSpan.FromSeconds(5)
+                }
             };
 
-            db.Users.Add(adminUser);
-            await db.SaveChangesAsync();
-            Console.WriteLine("✓ Đã tạo tài khoản admin mặc định:");
-            Console.WriteLine("  Username: admin");
-            Console.WriteLine("  Password: admin123");
-            Console.WriteLine("  Role: Owner");
+            await consulClient.Agent.ServiceRegister(registration);
+            Console.WriteLine($"✅ {serviceName} đã đăng ký vào Consul");
+
+            lifetime.ApplicationStopping.Register(() =>
+            {
+                consulClient.Agent.ServiceDeregister(serviceId).Wait();
+                Console.WriteLine($"🔴 {serviceName} đã hủy đăng ký");
+            });
         }
-        else
+        catch (Exception ex)
         {
-            // Kiểm tra xem đã có Owner chưa
-            var hasOwner = await db.Users.AnyAsync(u => u.Role == "Owner");
-            if (!hasOwner)
+            Console.WriteLine($"❌ Lỗi Consul: {ex.Message}");
+        }
+    });
+});
+
+// Seed data: Tạo tài khoản admin mặc định nếu chưa có (CHẠY ASYNC)
+Task.Run(async () =>
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+        try
+        {
+            // Kiểm tra xem đã có user nào chưa
+            if (!await db.Users.AnyAsync())
             {
                 var adminUser = new User
                 {
@@ -110,85 +146,35 @@ using (var scope = app.Services.CreateScope())
                 Console.WriteLine("  Password: admin123");
                 Console.WriteLine("  Role: Owner");
             }
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"✗ Lỗi khi seed data: {ex.Message}");
-    }
-}
-
-app.Lifetime.ApplicationStarted.Register(() =>
-{
-    Task.Run(async () =>
-    {
-        try
-        {
-            await Task.Delay(2000);
-
-            var registryUrl = builder.Configuration["ServiceRegistry:BaseUrl"] ?? "http://localhost:6000";
-
-            var server = app.Services.GetRequiredService<IServer>();
-            var addresses = server.Features.Get<IServerAddressesFeature>()?.Addresses;
-            var serviceUrl = addresses?.FirstOrDefault(a => a.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
-                             ?? addresses?.FirstOrDefault()
-                             ?? (builder.Configuration["ServiceInfo:Port"] is string p ? $"http://localhost:{p}" : "http://localhost:5004");
-            serviceUrl = serviceUrl.TrimEnd('/');
-
-            var discoveryClient = new ServiceDiscoveryClient(registryUrl);
-
-            var serviceInfo = new ServiceInfo
-            {
-                ServiceName = "AuthService",
-                Url = serviceUrl,
-                Description = "Xác thực và phân quyền người dùng",
-                Version = "1.0"
-            };
-
-            var result = await discoveryClient.RegisterServiceAsync(serviceInfo);
-
-            if (result)
-            {
-                Console.WriteLine($"✓ AuthService đã đăng ký thành công với ServiceRegistry tại {registryUrl}");
-
-                app.Lifetime.ApplicationStopping.Register(() =>
-                {
-                    _ = Task.Run(async () =>
-                    {
-                        await discoveryClient.UnregisterServiceAsync("AuthService");
-                    });
-                });
-
-                _ = Task.Run(async () =>
-                {
-                    var intervalSeconds = builder.Configuration.GetValue<int?>("ServiceInfo:HeartbeatSeconds") ?? 20;
-                    while (!app.Lifetime.ApplicationStopping.IsCancellationRequested)
-                    {
-                        try
-                        {
-                            await Task.Delay(TimeSpan.FromSeconds(intervalSeconds), app.Lifetime.ApplicationStopping);
-                            await discoveryClient.SendHeartbeatAsync("AuthService");
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            break;
-                        }
-                        catch
-                        {
-                        }
-                    }
-                });
-            }
             else
             {
-                Console.WriteLine($"✗ AuthService không thể đăng ký với ServiceRegistry. Vui lòng kiểm tra ServiceRegistry đã chạy chưa.");
+                // Kiểm tra xem đã có Owner chưa
+                var hasOwner = await db.Users.AnyAsync(u => u.Role == "Owner");
+                if (!hasOwner)
+                {
+                    var adminUser = new User
+                    {
+                        Username = "admin",
+                        PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+                        FullName = "Quản trị viên",
+                        Role = "Owner",
+                        IsActive = true
+                    };
+
+                    db.Users.Add(adminUser);
+                    await db.SaveChangesAsync();
+                    Console.WriteLine("✓ Đã tạo tài khoản admin mặc định:");
+                    Console.WriteLine("  Username: admin");
+                    Console.WriteLine("  Password: admin123");
+                    Console.WriteLine("  Role: Owner");
+                }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"✗ Lỗi khi đăng ký AuthService: {ex.Message}");
+            Console.WriteLine($"✗ Lỗi khi seed data: {ex.Message}");
         }
-    });
+    }
 });
 
 app.Run();

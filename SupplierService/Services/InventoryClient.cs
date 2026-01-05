@@ -1,55 +1,59 @@
 using System.Net.Http.Json;
-using Shared;
+using Consul;
 
 namespace SupplierService.Services
 {
     public class InventoryClient
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IConfiguration _configuration;
+        private readonly IConsulClient _consulClient;
 
-        public InventoryClient(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+        public InventoryClient(IHttpClientFactory httpClientFactory)
         {
             _httpClientFactory = httpClientFactory;
-            _configuration = configuration;
+            _consulClient = new ConsulClient(c => c.Address = new Uri("http://localhost:8500"));
         }
 
         public async Task<bool> ImportToInventory(int drugId, int quantity, DateTime? expiryDate = null)
         {
-            var baseUrl = await ResolveInventoryBaseUrlAsync();
+            var baseUrl = await GetServiceUrlAsync("InventoryService");
             var httpClient = _httpClientFactory.CreateClient();
 
             var payload = new
             {
                 drugId = drugId,
                 quantity = quantity,
-                expiryDate = expiryDate  // Truyền HSD vào InventoryService
+                expiryDate = expiryDate
             };
 
             var response = await httpClient.PostAsJsonAsync($"{baseUrl}/api/inventory/import", payload);
             return response.IsSuccessStatusCode;
         }
 
-        private async Task<string> ResolveInventoryBaseUrlAsync()
+        private async Task<string> GetServiceUrlAsync(string serviceName)
         {
-            var registryUrl = _configuration["ServiceRegistry:BaseUrl"] ?? "http://localhost:6000";
-            var fallback = _configuration["InventoryService:BaseUrl"] ?? "http://localhost:5006";
-
             try
             {
-                var discoveryClient = new ServiceDiscoveryClient(registryUrl);
-                var service = await discoveryClient.FindServiceAsync("InventoryService");
-                if (service != null && !string.IsNullOrWhiteSpace(service.Url))
+                // Query Consul để tìm service
+                var services = await _consulClient.Health.Service(serviceName, tag: null, passingOnly: true);
+
+                if (services.Response != null && services.Response.Any())
                 {
-                    return service.Url.TrimEnd('/');
+                    var service = services.Response.First().Service;
+                    var url = $"http://{service.Address}:{service.Port}";
+                    Console.WriteLine($"✅ Tìm thấy {serviceName} qua Consul: {url}");
+                    return url;
                 }
+
+                Console.WriteLine($"⚠️ Không tìm thấy {serviceName} trong Consul");
             }
-            catch
+            catch (Exception ex)
             {
-                // ignore and fallback
+                Console.WriteLine($"❌ Lỗi khi query Consul: {ex.Message}");
             }
 
-            return fallback.TrimEnd('/');
+            // Fallback về hardcode nếu Consul fail
+            return "http://localhost:5006";
         }
     }
 }

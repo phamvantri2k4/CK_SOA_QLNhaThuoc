@@ -88,6 +88,7 @@ D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\PharmaWebApp\bin\D
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\PharmaWebApp\bin\Debug\net8.0\PharmaWebApp.runtimeconfig.json
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\PharmaWebApp\bin\Debug\net8.0\PharmaWebApp.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\PharmaWebApp\bin\Debug\net8.0\PharmaWebApp.pdb
+D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\PharmaWebApp\bin\Debug\net8.0\Consul.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\PharmaWebApp\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\PharmaWebApp\bin\Debug\net8.0\Microsoft.Extensions.Configuration.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\PharmaWebApp\bin\Debug\net8.0\Microsoft.Extensions.Configuration.Abstractions.dll
@@ -122,6 +123,7 @@ D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\PharmaWebApp\bin\D
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\PharmaWebApp\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\PharmaWebApp\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\PharmaWebApp\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
+D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\PharmaWebApp\bin\Debug\net8.0\Newtonsoft.Json.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\PharmaWebApp\bin\Debug\net8.0\System.Diagnostics.DiagnosticSource.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\PharmaWebApp\bin\Debug\net8.0\System.Diagnostics.EventLog.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\PharmaWebApp\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll

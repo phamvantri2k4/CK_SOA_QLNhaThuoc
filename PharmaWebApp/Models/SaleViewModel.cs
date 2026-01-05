@@ -28,6 +28,7 @@ namespace PharmaWebApp.Models
     {
         public int Id { get; set; }
         public DateTime CreatedAt { get; set; }
+        public int? CustomerId { get; set; }  // <--- Added this
         public string? CustomerName { get; set; }
         public int StaffId { get; set; }
         public string? StaffName { get; set; }

@@ -9,24 +9,24 @@ namespace PharmaWebApp.Controllers
     [Authorize(Policy = "OwnerOnly")]
     public class CustomersController : BaseController
     {
-        private readonly IServiceResolver _resolver;
+        private readonly ServiceUrlHelper _serviceUrl;
 
-        public CustomersController(IServiceResolver resolver)
+        public CustomersController(ServiceUrlHelper serviceUrl)
         {
-            _resolver = resolver;
+            _serviceUrl = serviceUrl;
         }
 
         /* ================= HÀM DÙNG CHUNG ================= */
 
         private async Task<(HttpClient client, string url)> CustomerClientAsync()
         {
-            var url = await _resolver.GetRequiredAsync("CustomerService");
+            var url = await _serviceUrl.GetCustomerServiceUrlAsync();
             return (CreateAuthenticatedHttpClient(), url);
         }
 
         private async Task<(HttpClient client, string url)> SaleClientAsync()
         {
-            var url = await _resolver.GetRequiredAsync("SaleService");
+            var url = await _serviceUrl.GetSaleServiceUrlAsync();
             return (CreateAuthenticatedHttpClient(), url);
         }
 
@@ -67,7 +67,7 @@ namespace PharmaWebApp.Controllers
                     $"{saleUrl}/api/sales") ?? new();
 
                 ViewBag.PurchaseHistory = sales
-                    .Where(s => s.CustomerName == customer.Name)
+                    .Where(s => s.CustomerId.HasValue && s.CustomerId.Value == customer.Id)
                     .OrderByDescending(s => s.CreatedAt)
                     .ToList();
 

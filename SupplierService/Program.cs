@@ -3,7 +3,7 @@ using SupplierService.Data;
 using SupplierService.Services;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
-using Shared;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -33,87 +33,64 @@ if (app.Environment.IsDevelopment())
 // app.UseHttpsRedirection();
 
 app.UseAuthorization();
-
 app.MapControllers();
 
-// ===== TỰ ĐỘNG ĐĂNG KÝ VỚI SERVICE REGISTRY KHI KHỞI ĐỘNG =====
-app.Lifetime.ApplicationStarted.Register(() =>
+// Health check endpoint
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "SupplierService" }));
+
+// ===== ĐĂNG KÝ VÀO CONSUL =====
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+
+lifetime.ApplicationStarted.Register(() =>
 {
     Task.Run(async () =>
     {
-        const int delaySeconds = 3;
-
-        var attempt = 0;
-        while (true)
+        try
         {
-            try
+            await Task.Delay(1000);
+
+            var consulClient = new Consul.ConsulClient(config =>
             {
-                attempt++;
-                var registryUrl = builder.Configuration["ServiceRegistry:BaseUrl"] ?? "http://localhost:6000";
+                config.Address = new Uri("http://localhost:8500");
+            });
 
-                var server = app.Services.GetRequiredService<IServer>();
-                var addresses = server.Features.Get<IServerAddressesFeature>()?.Addresses;
-                var serviceUrl = addresses?.FirstOrDefault(a => a.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
-                                 ?? addresses?.FirstOrDefault()
-                                 ?? (builder.Configuration["ServiceInfo:Port"] is string p ? $"http://localhost:{p}" : "http://localhost:5007");
-                serviceUrl = serviceUrl.TrimEnd('/');
+            var server = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>();
+            var addressFeature = server.Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>();
+            var address = addressFeature?.Addresses.FirstOrDefault(a => a.StartsWith("http://")) ?? "http://localhost:5007";
+            
+            var uri = new Uri(address);
+            var servicePort = uri.Port;
+            var serviceName = "SupplierService";
+            var serviceId = $"{serviceName}-{Guid.NewGuid()}";
 
-                Console.WriteLine($"[SupplierService] Đang thử đăng ký với ServiceRegistry (Lần {attempt})...");
-                Console.WriteLine($"[SupplierService] Registry URL: {registryUrl}");
-                Console.WriteLine($"[SupplierService] Service URL (detected): {serviceUrl}");
+            Console.WriteLine($"🔍 Detected {serviceName} at: {address}");
 
-                var discoveryClient = new ServiceDiscoveryClient(registryUrl);
-                var serviceInfo = new ServiceInfo
-                {
-                    ServiceName = "SupplierService",
-                    Url = serviceUrl,
-                    Description = "Quản lý nhà cung cấp và nhập hàng",
-                    Version = "1.0"
-                };
-
-                var result = await discoveryClient.RegisterServiceAsync(serviceInfo);
-                if (result)
-                {
-                    Console.WriteLine($"✓ SupplierService đã đăng ký thành công với ServiceRegistry tại {registryUrl}");
-
-                    _ = Task.Run(async () =>
-                    {
-                        var intervalSeconds = builder.Configuration.GetValue<int?>("ServiceInfo:HeartbeatSeconds") ?? 20;
-                        while (!app.Lifetime.ApplicationStopping.IsCancellationRequested)
-                        {
-                            try
-                            {
-                                await Task.Delay(TimeSpan.FromSeconds(intervalSeconds), app.Lifetime.ApplicationStopping);
-                                await discoveryClient.SendHeartbeatAsync("SupplierService");
-                            }
-                            catch (OperationCanceledException)
-                            {
-                                break;
-                            }
-                            catch
-                            {
-                            }
-                        }
-                    });
-                    return;
-                }
-
-                Console.WriteLine($"✗ Lần thử {attempt}: SupplierService không thể đăng ký với ServiceRegistry.");
-                Console.WriteLine($"  Đợi {delaySeconds} giây trước khi thử lại...");
-                await Task.Delay(delaySeconds * 1000);
-            }
-            catch (Exception ex)
+            var registration = new Consul.AgentServiceRegistration
             {
-                attempt++;
-                Console.WriteLine($"✗ Lần thử {attempt}: Lỗi khi đăng ký SupplierService: {ex.Message}");
-                if (ex.InnerException != null)
+                ID = serviceId,
+                Name = serviceName,
+                Address = "localhost",
+                Port = servicePort,
+                Check = new Consul.AgentServiceCheck
                 {
-                    Console.WriteLine($"  Inner exception: {ex.InnerException.Message}");
+                    HTTP = $"http://localhost:{servicePort}/health",
+                    Interval = TimeSpan.FromSeconds(10),
+                    Timeout = TimeSpan.FromSeconds(5)
                 }
+            };
 
-                Console.WriteLine($"  Đợi {delaySeconds} giây trước khi thử lại...");
-                await Task.Delay(delaySeconds * 1000);
-            }
+            await consulClient.Agent.ServiceRegister(registration);
+            Console.WriteLine($"✅ {serviceName} đã đăng ký vào Consul");
+
+            lifetime.ApplicationStopping.Register(() =>
+            {
+                consulClient.Agent.ServiceDeregister(serviceId).Wait();
+                Console.WriteLine($"🔴 {serviceName} đã hủy đăng ký");
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Lỗi Consul: {ex.Message}");
         }
     });
 });

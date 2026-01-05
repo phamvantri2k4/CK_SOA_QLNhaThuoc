@@ -9,18 +9,18 @@ namespace PharmaWebApp.Controllers
     [Authorize(Policy = "OwnerOnly")]
     public class CategoriesController : BaseController
     {
-        private readonly IServiceResolver _resolver;
+        private readonly ServiceUrlHelper _serviceUrl;
 
-        public CategoriesController(IServiceResolver resolver)
+        public CategoriesController(ServiceUrlHelper serviceUrl)
         {
-            _resolver = resolver;
+            _serviceUrl = serviceUrl;
         }
 
         /* ================= HÀM DÙNG CHUNG ================= */
 
         private async Task<(HttpClient client, string url)> GetClientAsync()
         {
-            var url = await _resolver.GetRequiredAsync("DrugService");
+            var url = await _serviceUrl.GetDrugServiceUrlAsync();
             return (CreateAuthenticatedHttpClient(), url);
         }
 

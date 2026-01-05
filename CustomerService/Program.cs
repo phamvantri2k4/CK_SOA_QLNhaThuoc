@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using CustomerService.Data;
-using Shared;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -52,15 +51,66 @@ var app = builder.Build();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
-app.Lifetime.RegisterWithServiceRegistryOnStart(
-    app.Services,
-    builder.Configuration,
-    serviceName: "CustomerService",
-    description: "Quản lý thông tin khách hàng",
-    version: "1.0",
-    defaultPort: "5003");
+// Health check endpoint
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "CustomerService" }));
+
+// ===== ĐĂNG KÝ VÀO CONSUL =====
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+
+lifetime.ApplicationStarted.Register(() =>
+{
+    Task.Run(async () =>
+    {
+        try
+        {
+            await Task.Delay(1000);
+
+            var consulClient = new Consul.ConsulClient(config =>
+            {
+                config.Address = new Uri("http://localhost:8500");
+            });
+
+            var server = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>();
+            var addressFeature = server.Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>();
+            var address = addressFeature?.Addresses.FirstOrDefault(a => a.StartsWith("http://")) ?? "http://localhost:5003";
+            
+            var uri = new Uri(address);
+            var servicePort = uri.Port;
+            var serviceName = "CustomerService";
+            var serviceId = $"{serviceName}-{Guid.NewGuid()}";
+
+            Console.WriteLine($"🔍 Detected {serviceName} at: {address}");
+
+            var registration = new Consul.AgentServiceRegistration
+            {
+                ID = serviceId,
+                Name = serviceName,
+                Address = "localhost",
+                Port = servicePort,
+                Check = new Consul.AgentServiceCheck
+                {
+                    HTTP = $"http://localhost:{servicePort}/health",
+                    Interval = TimeSpan.FromSeconds(10),
+                    Timeout = TimeSpan.FromSeconds(5)
+                }
+            };
+
+            await consulClient.Agent.ServiceRegister(registration);
+            Console.WriteLine($"✅ {serviceName} đã đăng ký vào Consul");
+
+            lifetime.ApplicationStopping.Register(() =>
+            {
+                consulClient.Agent.ServiceDeregister(serviceId).Wait();
+                Console.WriteLine($"🔴 {serviceName} đã hủy đăng ký");
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Lỗi Consul: {ex.Message}");
+        }
+    });
+});
 
 app.Run();

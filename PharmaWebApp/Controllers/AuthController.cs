@@ -15,12 +15,12 @@ namespace PharmaWebApp.Controllers
     public class AuthController : BaseController
     {
         private readonly ILogger<AuthController> _logger;
-        private readonly IServiceResolver _serviceResolver;
+        private readonly ServiceUrlHelper _serviceUrl;
 
-        public AuthController(ILogger<AuthController> logger, IServiceResolver serviceResolver)
+        public AuthController(ILogger<AuthController> logger, ServiceUrlHelper serviceUrl)
         {
             _logger = logger;
-            _serviceResolver = serviceResolver;
+            _serviceUrl = serviceUrl;
         }
 
         [HttpGet]
@@ -41,7 +41,7 @@ namespace PharmaWebApp.Controllers
 
             try
             {
-                var authServiceUrl = await _serviceResolver.GetRequiredAsync("AuthService");
+                var authServiceUrl = await _serviceUrl.GetAuthServiceUrlAsync();
                 var httpClient = CreateHttpClient();
 
                 var loginRequest = new
@@ -141,7 +141,7 @@ namespace PharmaWebApp.Controllers
 
             try
             {
-                var authServiceUrl = await _serviceResolver.GetRequiredAsync("AuthService");
+                var authServiceUrl = await _serviceUrl.GetAuthServiceUrlAsync();
                 var httpClient = CreateHttpClient();
 
                 var registerRequest = new
@@ -186,7 +186,7 @@ namespace PharmaWebApp.Controllers
         {
             try
             {
-                var authServiceUrl = await _serviceResolver.GetRequiredAsync("AuthService");
+                var authServiceUrl = await _serviceUrl.GetAuthServiceUrlAsync();
                 var httpClient = CreateHttpClient();
                 httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 

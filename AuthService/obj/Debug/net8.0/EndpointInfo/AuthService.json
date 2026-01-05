@@ -98,6 +98,18 @@
         }
       }
     },
+    "/health": {
+      "get": {
+        "tags": [
+          "AuthService"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Users": {
       "get": {
         "tags": [

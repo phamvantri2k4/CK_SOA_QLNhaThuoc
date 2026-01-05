@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using ReportingService.Models;
 using Shared.Helpers;
 using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace ReportingService.Controllers
 {
@@ -11,16 +10,13 @@ namespace ReportingService.Controllers
     public class ReportsController : ControllerBase
     {
         private readonly IHttpClientFactory _factory;
-        private readonly IConfiguration _config;
         private readonly ILogger<ReportsController> _logger;
 
         public ReportsController(
             IHttpClientFactory factory,
-            IConfiguration config,
             ILogger<ReportsController> logger)
         {
             _factory = factory;
-            _config = config;
             _logger = logger;
         }
 
@@ -70,8 +66,8 @@ namespace ReportingService.Controllers
             {
                 var client = _factory.CreateClient();
 
-                // 🔐 service token
-                var authUrl = (_config["AuthService:BaseUrl"] ?? "").TrimEnd('/');
+                // 🔐 Get AuthService URL from Consul and get service token
+                var authUrl = await GetServiceUrl("AuthService");
                 var token = await ServiceTokenHelper.GetServiceTokenAsync(client, authUrl);
                 if (!string.IsNullOrEmpty(token))
                 {
@@ -79,10 +75,10 @@ namespace ReportingService.Controllers
                         new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
                 }
 
-                // 📦 get SaleService url
-                var saleUrl = await GetSaleServiceUrl();
+                // 📦 Get SaleService URL from Consul
+                var saleUrl = await GetServiceUrl("SaleService");
 
-                // 📄 get invoices
+                // 📄 Get invoices
                 var invoices = await client
                     .GetFromJsonAsync<List<SaleInvoiceDisplayViewModel>>($"{saleUrl}/api/sales")
                     ?? new();
@@ -127,41 +123,41 @@ namespace ReportingService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError($"Report error ({type}): {ex.Message}");
-                return StatusCode(500, "Cannot build report");
+                return StatusCode(500, $"Cannot build report: {ex.Message}");
             }
         }
 
-        /* ================= SERVICE DISCOVERY ================= */
+        /* ================= SERVICE DISCOVERY (CONSUL) ================= */
 
-        private async Task<string> GetSaleServiceUrl()
+        private async Task<string> GetServiceUrl(string serviceName)
         {
-            var registryUrl = (_config["ServiceRegistry:BaseUrl"] ?? "").TrimEnd('/');
-            var fallback = (_config["SaleService:BaseUrl"] ?? "http://localhost:5002").TrimEnd('/');
+            var fallbackUrls = new Dictionary<string, string>
+            {
+                ["AuthService"] = "http://localhost:5004",
+                ["SaleService"] = "http://localhost:5002"
+            };
 
             try
             {
-                var client = _factory.CreateClient();
-                var resp = await client.GetAsync($"{registryUrl}/api/registry/services/SaleService");
+                using var consulClient = new Consul.ConsulClient(config =>
+                {
+                    config.Address = new Uri("http://localhost:8500");
+                });
 
-                if (!resp.IsSuccessStatusCode) return fallback;
+                var services = await consulClient.Health.Service(serviceName, null, true);
+                var service = services.Response?.FirstOrDefault();
 
-                var json = await resp.Content.ReadAsStringAsync();
-                var info = JsonSerializer.Deserialize<ServiceInfo>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (service != null)
+                {
+                    return $"http://{service.Service.Address}:{service.Service.Port}";
+                }
 
-                return string.IsNullOrWhiteSpace(info?.Url) ? fallback : info.Url.TrimEnd('/');
+                return fallbackUrls.GetValueOrDefault(serviceName, "");
             }
             catch
             {
-                return fallback;
+                return fallbackUrls.GetValueOrDefault(serviceName, "");
             }
         }
-    }
-
-    /* ================= DTO ================= */
-
-    public class ServiceInfo
-    {
-        public string Url { get; set; } = "";
     }
 }

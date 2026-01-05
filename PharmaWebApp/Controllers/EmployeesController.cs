@@ -9,18 +9,18 @@ namespace PharmaWebApp.Controllers
     [Authorize(Policy = "OwnerOnly")]
     public class EmployeesController : BaseController
     {
-        private readonly IServiceResolver _resolver;
+        private readonly ServiceUrlHelper _serviceUrl;
 
-        public EmployeesController(IServiceResolver resolver)
+        public EmployeesController(ServiceUrlHelper serviceUrl)
         {
-            _resolver = resolver;
+            _serviceUrl = serviceUrl;
         }
 
         /* ================= HÀM DÙNG CHUNG ================= */
 
         private async Task<(HttpClient client, string url)> GetAuthClientAsync()
         {
-            var url = await _resolver.GetRequiredAsync("AuthService");
+            var url = await _serviceUrl.GetAuthServiceUrlAsync();
             return (CreateAuthenticatedHttpClient(), url);
         }
 

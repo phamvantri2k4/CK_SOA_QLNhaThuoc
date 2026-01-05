@@ -10,11 +10,11 @@ namespace PharmaWebApp.Controllers
     [Authorize]
     public class AccountController : BaseController
     {
-        private readonly IServiceResolver _resolver;
+        private readonly ServiceUrlHelper _serviceUrl;
 
-        public AccountController(IServiceResolver resolver)
+        public AccountController(ServiceUrlHelper serviceUrl)
         {
-            _resolver = resolver;
+            _serviceUrl = serviceUrl;
         }
 
         /* ================= PROFILE ================= */
@@ -50,7 +50,7 @@ namespace PharmaWebApp.Controllers
 
         private async Task<(HttpClient client, string url)> GetAuthClientAsync()
         {
-            var url = await _resolver.GetRequiredAsync("AuthService");
+            var url = await _serviceUrl.GetAuthServiceUrlAsync();
             return (CreateAuthenticatedHttpClient(), url);
         }
 

@@ -187,6 +187,7 @@ D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\b
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\bin\Debug\net8.0\ReportingService.pdb
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\bin\Debug\net8.0\Azure.Core.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\bin\Debug\net8.0\Azure.Identity.dll
+D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\bin\Debug\net8.0\Consul.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\bin\Debug\net8.0\Humanizer.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\bin\Debug\net8.0\Microsoft.Bcl.AsyncInterfaces.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\bin\Debug\net8.0\Microsoft.CodeAnalysis.dll
@@ -240,6 +241,7 @@ D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\b
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\bin\Debug\net8.0\Microsoft.SqlServer.Server.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\bin\Debug\net8.0\Microsoft.Win32.SystemEvents.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\bin\Debug\net8.0\Mono.TextTemplating.dll
+D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\bin\Debug\net8.0\Newtonsoft.Json.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\ReportingService\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerUI.dll

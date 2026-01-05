@@ -1,4 +1,4 @@
-@model List<Shared.ServiceInfo>
+@model List<Consul.AgentService>
 @{ 
     ViewData["Title"] = "Trang chủ - Pharmacity";
 }
@@ -7,7 +7,7 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
             <div class="app-page-title">Tổng quan</div>
-            <div class="text-muted">Chào mừng bạn đến Pharmacity (chạy local)</div>
+            <div class="text-muted">Chào mừng bạn đến Pharmacity (chạy Consul)</div>
         </div>
         <div class="d-flex gap-2">
             @if (User.IsInRole("Staff") || User.IsInRole("Owner"))
@@ -30,40 +30,57 @@
 
     <div class="row g-3">
         <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="bi bi-diagram-3"></i>
-                        <span class="ms-1">Trạng thái Service Registry</span>
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <div class="fw-bold">
+                        <i class="bi bi-cloud-check text-primary"></i>
+                        <span class="ms-1">Trạng thái Microservices (Consul)</span>
                     </div>
-                    <span class="badge bg-light text-dark">Local</span>
+                    <span class="badge bg-primary text-white">Active</span>
                 </div>
                 <div class="card-body">
                     @if (Model != null && Model.Any())
                     {
-                        <div class="alert alert-success">
-                            <strong>Service Registry đang hoạt động</strong>
-                            <div class="text-muted">Đã tìm thấy @Model.Count service(s) đã đăng ký.</div>
+                        <div class="alert alert-success d-flex align-items-center">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            <div>
+                                <strong>Consul đang hoạt động tốt</strong>
+                                <div class="text-muted small">Đã phát hiện @Model.Count service(s) trong hệ thống.</div>
+                            </div>
                         </div>
 
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle">
-                                <thead>
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
                                     <tr>
                                         <th>Tên Service</th>
-                                        <th>URL</th>
-                                        <th>Mô tả</th>
-                                        <th>Version</th>
+                                        <th>Địa chỉ (Instance đầu tiên)</th>
+                                        <th>Trạng thái</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var service in Model)
                                     {
                                         <tr>
-                                            <td><strong>@service.ServiceName</strong></td>
-                                            <td><code>@service.Url</code></td>
-                                            <td>@(service.Description ?? "-")</td>
-                                            <td>@(service.Version ?? "-")</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-primary bg-opacity-10 p-2 rounded me-3">
+                                                        <i class="bi bi-gear-fill text-primary"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-bold text-dark">@service.Service</div>
+                                                        <div class="small text-muted">ID: @service.ID.Split('-')[0]...</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <code class="bg-light p-1 px-2 rounded text-primary">@service.Address:@service.Port</code>
+                                            </td>
+                                            <td>
+                                                <span class="badge rounded-pill bg-success-subtle text-success border border-success px-3">
+                                                    <i class="bi bi-circle-fill me-1 small"></i> Online
+                                                </span>
+                                            </td>
                                         </tr>
                                     }
                                 </tbody>
@@ -72,9 +89,12 @@
                     }
                     else
                     {
-                        <div class="alert alert-warning mb-0">
-                            <strong>Không thể kết nối với Service Registry</strong>
-                            <div class="text-muted">Hãy chạy ServiceRegistry trước (http://localhost:6000).</div>
+                        <div class="alert alert-danger mb-0 d-flex align-items-center">
+                            <i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i>
+                            <div>
+                                <strong>Không thể kết nối với Consul</strong>
+                                <div class="text-muted small">Vui lòng kiểm tra Consul Agent đang chạy tại <a href="http://localhost:8500" target="_blank">http://localhost:8500</a>.</div>
+                            </div>
                         </div>
                     }
                 </div>

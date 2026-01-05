@@ -1,19 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using InventoryService.Data;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting.Server.Features;
-using Shared;
+using Consul;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 builder.Services.AddDbContext<InventoryDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// HttpClient để gọi ServiceRegistry
 builder.Services.AddHttpClient();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -26,92 +22,71 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Comment UseHttpsRedirection để tránh lỗi SSL trong development
-// app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
-// ===== TỰ ĐỘNG ĐĂNG KÝ VỚI SERVICE REGISTRY KHI KHỞI ĐỘNG =====
-app.Lifetime.ApplicationStarted.Register(() =>
+// Health check endpoint for Consul
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "InventoryService" }));
+
+// ===== ĐĂNG KÝ VÀO CONSUL =====
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+
+// Đăng ký sau khi app đã start để lấy đúng port
+lifetime.ApplicationStarted.Register(() =>
 {
     Task.Run(async () =>
     {
-        const int delaySeconds = 3;
-
-        var attempt = 0;
-        while (true)
+        try
         {
-            try
+            // Đợi 1 giây để server hoàn tất khởi động
+            await Task.Delay(1000);
+
+            var consulClient = new ConsulClient(config =>
             {
-                attempt++;
-                var registryUrl = builder.Configuration["ServiceRegistry:BaseUrl"] ?? "http://localhost:6000";
+                config.Address = new Uri("http://localhost:8500");
+            });
 
-                // Lấy URL thực tế app đang listen để tránh mismatch port khi chạy bằng VS/launchSettings
-                var server = app.Services.GetRequiredService<IServer>();
-                var addresses = server.Features.Get<IServerAddressesFeature>()?.Addresses;
-                var serviceUrl = addresses?.FirstOrDefault(a => a.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
-                                 ?? addresses?.FirstOrDefault()
-                                 ?? (builder.Configuration["ServiceInfo:Port"] is string p ? $"http://localhost:{p}" : "http://localhost:5006");
-                serviceUrl = serviceUrl.TrimEnd('/');
+            // Tự động detect port từ server đang chạy
+            var server = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>();
+            var addressFeature = server.Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>();
+            var address = addressFeature?.Addresses.FirstOrDefault(a => a.StartsWith("http://")) ?? "http://localhost:5006";
+            
+            var uri = new Uri(address);
+            var servicePort = uri.Port;
+            var serviceName = "InventoryService";
+            var serviceId = $"{serviceName}-{Guid.NewGuid()}";
 
-                Console.WriteLine($"[InventoryService] Đang thử đăng ký với ServiceRegistry (Lần {attempt})...");
-                Console.WriteLine($"[InventoryService] Registry URL: {registryUrl}");
-                Console.WriteLine($"[InventoryService] Service URL (detected): {serviceUrl}");
+            Console.WriteLine($"🔍 Detected service running at: {address}");
+            Console.WriteLine($"📝 Registering to Consul with port: {servicePort}");
 
-                var discoveryClient = new ServiceDiscoveryClient(registryUrl);
-                var serviceInfo = new ServiceInfo
-                {
-                    ServiceName = "InventoryService",
-                    Url = serviceUrl,
-                    Description = "Quản lý tồn kho",
-                    Version = "1.0"
-                };
-
-                var result = await discoveryClient.RegisterServiceAsync(serviceInfo);
-                if (result)
-                {
-                    Console.WriteLine($"✓ InventoryService đã đăng ký thành công với ServiceRegistry tại {registryUrl}");
-
-                    _ = Task.Run(async () =>
-                    {
-                        var intervalSeconds = builder.Configuration.GetValue<int?>("ServiceInfo:HeartbeatSeconds") ?? 20;
-                        while (!app.Lifetime.ApplicationStopping.IsCancellationRequested)
-                        {
-                            try
-                            {
-                                await Task.Delay(TimeSpan.FromSeconds(intervalSeconds), app.Lifetime.ApplicationStopping);
-                                await discoveryClient.SendHeartbeatAsync("InventoryService");
-                            }
-                            catch (OperationCanceledException)
-                            {
-                                break;
-                            }
-                            catch
-                            {
-                            }
-                        }
-                    });
-                    return;
-                }
-
-                Console.WriteLine($"✗ Lần thử {attempt}: InventoryService không thể đăng ký với ServiceRegistry.");
-                Console.WriteLine($"  Đợi {delaySeconds} giây trước khi thử lại...");
-                await Task.Delay(delaySeconds * 1000);
-            }
-            catch (Exception ex)
+            var registration = new AgentServiceRegistration
             {
-                attempt++;
-                Console.WriteLine($"✗ Lần thử {attempt}: Lỗi khi đăng ký InventoryService: {ex.Message}");
-                if (ex.InnerException != null)
+                ID = serviceId,
+                Name = serviceName,
+                Address = "localhost",
+                Port = servicePort,
+                Check = new AgentServiceCheck
                 {
-                    Console.WriteLine($"  Inner exception: {ex.InnerException.Message}");
+                    HTTP = $"http://localhost:{servicePort}/health",
+                    Interval = TimeSpan.FromSeconds(10),
+                    Timeout = TimeSpan.FromSeconds(5)
                 }
+            };
 
-                Console.WriteLine($"  Đợi {delaySeconds} giây trước khi thử lại...");
-                await Task.Delay(delaySeconds * 1000);
-            }
+            await consulClient.Agent.ServiceRegister(registration);
+            Console.WriteLine($"✅ {serviceName} đã đăng ký vào Consul tại http://localhost:8500");
+            Console.WriteLine($"🏥 Health check: http://localhost:{servicePort}/health");
+
+            // Hủy đăng ký khi service dừng
+            lifetime.ApplicationStopping.Register(() =>
+            {
+                consulClient.Agent.ServiceDeregister(serviceId).Wait();
+                Console.WriteLine($"🔴 {serviceName} đã hủy đăng ký khỏi Consul");
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Lỗi khi đăng ký Consul: {ex.Message}");
         }
     });
 });

@@ -10,31 +10,31 @@ namespace PharmaWebApp.Controllers
     [Authorize(Policy = "StaffOrOwner")]
     public class SalesController : BaseController
     {
-        private readonly IServiceResolver _resolver;
+        private readonly ServiceUrlHelper _serviceUrl;
 
-        public SalesController(IServiceResolver resolver)
+        public SalesController(ServiceUrlHelper serviceUrl)
         {
-            _resolver = resolver;
+            _serviceUrl = serviceUrl;
         }
 
         /* ================= HÀM DÙNG CHUNG ================= */
 
         private async Task<(HttpClient client, string url)> SaleClientAsync()
         {
-            var url = await _resolver.GetRequiredAsync("SaleService");
+            var url = await _serviceUrl.GetSaleServiceUrlAsync();
             return (CreateAuthenticatedHttpClient(), url);
         }
 
         private async Task<List<DrugViewModel>> GetDrugsAsync()
         {
-            var url = await _resolver.GetRequiredAsync("DrugService");
+            var url = await _serviceUrl.GetDrugServiceUrlAsync();
             return await CreateAuthenticatedHttpClient()
                 .GetFromJsonAsync<List<DrugViewModel>>($"{url}/api/drugs") ?? new();
         }
 
         private async Task<List<StaffViewModel>> GetStaffAsync()
         {
-            var url = await _resolver.GetRequiredAsync("AuthService");
+            var url = await _serviceUrl.GetAuthServiceUrlAsync();
             return await CreateAuthenticatedHttpClient()
                 .GetFromJsonAsync<List<StaffViewModel>>($"{url}/api/users") ?? new();
         }
@@ -91,7 +91,7 @@ namespace PharmaWebApp.Controllers
                 ViewBag.Drugs = drugs;
 
                 // Fetch inventory stock
-                var inventoryUrl = await _resolver.GetOptionalAsync("InventoryService");
+                var inventoryUrl = await _serviceUrl.GetInventoryServiceUrlAsync();
                 var stockByDrugId = new Dictionary<int, int>();
                 
                 if (!string.IsNullOrEmpty(inventoryUrl))
@@ -119,7 +119,7 @@ namespace PharmaWebApp.Controllers
                 List<string> categories = new();
                 try
                 {
-                    var drugServiceUrl = await _resolver.GetRequiredAsync("DrugService");
+                    var drugServiceUrl = await _serviceUrl.GetDrugServiceUrlAsync();
                     var client = CreateAuthenticatedHttpClient();
                     var categoriesData = await client.GetFromJsonAsync<List<CategoryViewModel>>(
                         $"{drugServiceUrl}/api/categories") ?? new();

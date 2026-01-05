@@ -9,18 +9,18 @@ namespace PharmaWebApp.Controllers
     [Authorize(Policy = "OwnerOnly")]
     public class SuppliersController : BaseController
     {
-        private readonly IServiceResolver _resolver;
+        private readonly ServiceUrlHelper _serviceUrl;
 
-        public SuppliersController(IServiceResolver resolver)
+        public SuppliersController(ServiceUrlHelper serviceUrl)
         {
-            _resolver = resolver;
+            _serviceUrl = serviceUrl;
         }
 
         /* ================= HÀM DÙNG CHUNG ================= */
 
         private async Task<(HttpClient client, string url)> SupplierClientAsync()
         {
-            var url = await _resolver.GetRequiredAsync("SupplierService");
+            var url = await _serviceUrl.GetSupplierServiceUrlAsync();
             return (CreateAuthenticatedHttpClient(), url);
         }
 
@@ -33,7 +33,7 @@ namespace PharmaWebApp.Controllers
 
         private async Task<List<DrugViewModel>> GetDrugsAsync()
         {
-            var url = await _resolver.GetRequiredAsync("DrugService");
+            var url = await _serviceUrl.GetDrugServiceUrlAsync();
             return await CreateAuthenticatedHttpClient()
                 .GetFromJsonAsync<List<DrugViewModel>>($"{url}/api/drugs") ?? new();
         }
@@ -172,20 +172,24 @@ namespace PharmaWebApp.Controllers
             {
                 var drug = drugs.FirstOrDefault(dr => dr.Id == d.DrugId);
                 var packSize = drug?.PackSize ?? 1;
-                var quantityInPills = d.Quantity;
+                if (packSize <= 0) packSize = 1;
 
-                // Nếu nhập theo hộp, convert sang viên
+                var quantityInPills = d.Quantity;
+                var unitPricePerPill = d.UnitPrice;
+
+                // Nếu nhập theo hộp, convert số lượng sang viên và chia giá theo viên
                 if (d.UnitType == "box")
                 {
                     quantityInPills = d.Quantity * packSize;
+                    unitPricePerPill = d.UnitPrice / (decimal)packSize;
                 }
 
                 return new
                 {
                     d.DrugId,
                     Quantity = quantityInPills,  // Luôn lưu theo viên vào kho
-                    d.UnitPrice,
-                    d.ExpiryDate  // Thêm HSD
+                    UnitPrice = unitPricePerPill, // Lưu giá theo viên để nhân ra tiền đúng
+                    d.ExpiryDate
                 };
             });
 

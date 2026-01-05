@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using PharmaWebApp.Services;
-using Shared;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,13 +47,11 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("StaffOrOwner", policy => policy.RequireRole("Staff", "Owner"));
 });
 
-var registryBaseUrl = builder.Configuration["ServiceRegistry:BaseUrl"] ?? "http://localhost:6000";
-builder.Services.AddSingleton(new ServiceDiscoveryClient(registryBaseUrl));
-builder.Services.AddScoped<IServiceResolver, ServiceResolver>();
-builder.Services.AddHttpClient("ServiceRegistry", client =>
-{
-    client.BaseAddress = new Uri(registryBaseUrl);
-});
+// Consul Service Discovery
+builder.Services.AddSingleton<ConsulServiceDiscovery>();
+builder.Services.AddScoped<ServiceUrlHelper>();
+builder.Services.AddHttpClient();
+
 
 var app = builder.Build();
 

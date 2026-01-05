@@ -6,6 +6,8 @@ using SaleService.Model;
 using Shared.Helpers;
 using System.Net.Http.Json;
 
+using Microsoft.Extensions.Caching.Memory;
+
 namespace SaleService.Controllers
 {
     [ApiController]
@@ -14,32 +16,75 @@ namespace SaleService.Controllers
     {
         private readonly SaleDbContext _db;
         private readonly IHttpClientFactory _factory;
-        private readonly IConfiguration _config;
         private readonly ILogger<SalesController> _logger;
+        private readonly IMemoryCache _cache;
 
         public SalesController(
             SaleDbContext db,
             IHttpClientFactory factory,
-            IConfiguration config,
-            ILogger<SalesController> logger)
+            ILogger<SalesController> logger,
+            IMemoryCache cache)
         {
             _db = db;
             _factory = factory;
-            _config = config;
             _logger = logger;
+            _cache = cache;
+        }
+
+        // ...
+
+        private async Task<string> GetServiceUrl(string serviceName)
+        {
+            return await _cache.GetOrCreateAsync(serviceName, async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5); // Cache 5 phút
+
+                var fallbackUrls = new Dictionary<string, string>
+                {
+                    ["AuthService"] = "http://localhost:5004",
+                    ["DrugService"] = "http://localhost:5001",
+                    ["CustomerService"] = "http://localhost:5003",
+                    ["InventoryService"] = "http://localhost:5006"
+                };
+
+                try
+                {
+                    using var consulClient = new Consul.ConsulClient(config =>
+                    {
+                        config.Address = new Uri("http://localhost:8500");
+                    });
+
+                    var services = await consulClient.Health.Service(serviceName, null, true);
+                    var service = services.Response?.FirstOrDefault();
+
+                    if (service != null)
+                    {
+                        var url = $"http://{service.Service.Address}:{service.Service.Port}";
+                        _logger.LogInformation($"Discovered {serviceName} at {url}");
+                        return url;
+                    }
+
+                    _logger.LogWarning($"Service {serviceName} not found in Consul. Using fallback.");
+                    return fallbackUrls.GetValueOrDefault(serviceName, "");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Consul error for {serviceName}: {ex.Message}");
+                    return fallbackUrls.GetValueOrDefault(serviceName, "");
+                }
+            }) ?? "";
         }
 
         /* ================= GET ================= */
 
         [HttpGet]
-        [Authorize] // Allow authenticated requests including service tokens
+        [Authorize]
         public async Task<IActionResult> GetAll(int? staffId = null)
         {
             var query = _db.SaleInvoices
                 .Include(x => x.Details)
                 .AsQueryable();
 
-            // Filter by staffId if provided
             if (staffId.HasValue && staffId.Value > 0)
             {
                 query = query.Where(x => x.StaffId == staffId.Value);
@@ -49,16 +94,34 @@ namespace SaleService.Controllers
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync();
 
-            var result = new List<SaleInvoiceResponse>();
-
-            foreach (var inv in invoices)
-                result.Add(await BuildResponse(inv));
+            // PERFORMANCE: Không gọi external services cho danh sách
+            var result = invoices.Select(inv => new SaleInvoiceResponse
+            {
+                Id = inv.Id,
+                CreatedAt = inv.CreatedAt,
+                StaffId = inv.StaffId,
+                StaffName = $"NV-{inv.StaffId}", // Không gọi AuthService
+                CustomerId = inv.CustomerId,
+                CustomerName = inv.CustomerId.HasValue ? $"KH-{inv.CustomerId.Value}" : "Khách vãng lai",
+                TotalAmount = inv.TotalAmount,
+                PaymentStatus = inv.PaymentStatus,
+                PaidAt = inv.PaidAt,
+                Items = inv.Details.Select(d => new SaleItemResponse
+                {
+                    DrugId = d.DrugId,
+                    DrugName = $"Thuốc-{d.DrugId}", // Không gọi DrugService
+                    UnitType = d.UnitType,
+                    Quantity = d.Quantity,
+                    UnitPrice = d.UnitPrice,
+                    LineTotal = d.Quantity * d.UnitPrice
+                }).ToList()
+            }).ToList();
 
             return Ok(result);
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = "Staff,Owner")] // Allow both Staff and Owner
+        [Authorize(Roles = "Staff,Owner")]
         public async Task<IActionResult> Get(int id)
         {
             var invoice = await _db.SaleInvoices
@@ -67,13 +130,13 @@ namespace SaleService.Controllers
 
             return invoice == null
                 ? NotFound("Invoice not found")
-                : Ok(await BuildResponse(invoice));
+                : Ok(await BuildResponse(invoice)); // CHỈ chi tiết mới gọi services
         }
 
         /* ================= CREATE ================= */
 
         [HttpPost]
-        [Authorize(Roles = "Staff,Owner")] // Allow both Staff and Owner to create invoices
+        [Authorize(Roles = "Staff,Owner")]
         public async Task<IActionResult> Create(CreateSaleRequest req)
         {
             if (req.Items == null || req.Items.Count == 0)
@@ -120,7 +183,7 @@ namespace SaleService.Controllers
         /* ================= PAY ================= */
 
         [HttpPut("{id}/pay")]
-        [Authorize(Roles = "Staff,Owner")] // Allow both Staff and Owner to mark as paid
+        [Authorize(Roles = "Staff,Owner")]
         public async Task<IActionResult> Pay(int id)
         {
             var invoice = await _db.SaleInvoices
@@ -131,8 +194,8 @@ namespace SaleService.Controllers
             if (invoice.PaymentStatus == "Paid")
                 return BadRequest("Already paid");
 
-            var inventoryUrl = GetUrl("InventoryService");
-            var client = CreateServiceClient();
+            var inventoryUrl = await GetServiceUrl("InventoryService");
+            var client = await CreateServiceClient();
 
             foreach (var d in invoice.Details)
             {
@@ -181,14 +244,13 @@ namespace SaleService.Controllers
 
         private async Task<SaleInvoiceResponse> BuildResponse(SaleInvoice inv)
         {
-            var items = new List<SaleItemResponse>();
-
-            foreach (var d in inv.Details)
+            // 1. Prepare Tasks for fetching Drugs
+            var drugTasks = inv.Details.Select(async d =>
             {
                 try
                 {
                     var drug = await GetDrug(d.DrugId);
-                    items.Add(new SaleItemResponse
+                    return new SaleItemResponse
                     {
                         DrugId = d.DrugId,
                         DrugName = drug?.Name ?? $"Thuốc-{d.DrugId}",
@@ -196,12 +258,12 @@ namespace SaleService.Controllers
                         Quantity = d.Quantity,
                         UnitPrice = d.UnitPrice,
                         LineTotal = d.Quantity * d.UnitPrice
-                    });
+                    };
                 }
                 catch (Exception ex)
                 {
                     _logger.LogWarning($"Failed to get drug {d.DrugId}: {ex.Message}");
-                    items.Add(new SaleItemResponse
+                    return new SaleItemResponse
                     {
                         DrugId = d.DrugId,
                         DrugName = $"Thuốc-{d.DrugId}",
@@ -209,33 +271,32 @@ namespace SaleService.Controllers
                         Quantity = d.Quantity,
                         UnitPrice = d.UnitPrice,
                         LineTotal = d.Quantity * d.UnitPrice
-                    });
+                    };
                 }
-            }
+            }).ToList();
 
-            UserDto? staff = null;
-            try
-            {
-                staff = await GetUser(inv.StaffId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"Failed to get user {inv.StaffId}: {ex.Message}");
-            }
+            // 2. Prepare Tasks for Staff
+            var staffTask = GetUser(inv.StaffId);
 
-            CustomerDto? customer = null;
+            // 3. Prepare Task for Customer (if fetching needed)
+            Task<CustomerDto?>? customerTask = null;
             if (inv.CustomerId.HasValue)
             {
-                try
-                {
-                    customer = await GetCustomer(inv.CustomerId.Value);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning($"Failed to get customer {inv.CustomerId}: {ex.Message}");
-                }
+                customerTask = GetCustomer(inv.CustomerId.Value);
             }
 
+            // 4. WAIT ALL PARALLEL (Chờ tất cả chạy song song)
+            await Task.WhenAll(drugTasks);
+            UserDto? staff = null;
+            try { staff = await staffTask; } catch { }
+            
+            CustomerDto? customer = null;
+            if (customerTask != null) 
+            {
+                 try { customer = await customerTask; } catch { }
+            }
+
+            // 5. Construct Result
             return new SaleInvoiceResponse
             {
                 Id = inv.Id,
@@ -247,15 +308,17 @@ namespace SaleService.Controllers
                 TotalAmount = inv.TotalAmount,
                 PaymentStatus = inv.PaymentStatus,
                 PaidAt = inv.PaidAt,
-                Items = items
+                Items = drugTasks.Select(t => t.Result).ToList() // Safe to access .Result here
             };
         }
 
-        private HttpClient CreateServiceClient()
+
+
+        private async Task<HttpClient> CreateServiceClient()
         {
             var client = _factory.CreateClient();
-            var token = ServiceTokenHelper
-                .GetServiceTokenAsync(client, GetUrl("AuthService")).Result;
+            var authUrl = await GetServiceUrl("AuthService");
+            var token = await ServiceTokenHelper.GetServiceTokenAsync(client, authUrl);
 
             if (!string.IsNullOrEmpty(token))
                 client.DefaultRequestHeaders.Authorization =
@@ -264,25 +327,34 @@ namespace SaleService.Controllers
             return client;
         }
 
-        private string GetUrl(string key)
-            => (_config[$"{key}:BaseUrl"] ?? "").TrimEnd('/');
-
         private async Task<DrugDto?> GetDrug(int id)
-            => await CreateServiceClient()
-                .GetFromJsonAsync<DrugDto>($"{GetUrl("DrugService")}/api/drugs/{id}");
+        {
+            var client = await CreateServiceClient();
+            var url = await GetServiceUrl("DrugService");
+            return await client.GetFromJsonAsync<DrugDto>($"{url}/api/drugs/{id}");
+        }
 
         private async Task<UserDto?> GetUser(int id)
-            => await CreateServiceClient()
-                .GetFromJsonAsync<UserDto>($"{GetUrl("AuthService")}/api/users/{id}");
+        {
+            var client = await CreateServiceClient();
+            var url = await GetServiceUrl("AuthService");
+            return await client.GetFromJsonAsync<UserDto>($"{url}/api/users/{id}");
+        }
 
         private async Task<CustomerDto?> GetCustomer(int id)
-            => await CreateServiceClient()
-                .GetFromJsonAsync<CustomerDto>($"{GetUrl("CustomerService")}/api/customers/{id}");
+        {
+            var client = await CreateServiceClient();
+            var url = await GetServiceUrl("CustomerService");
+            return await client.GetFromJsonAsync<CustomerDto>($"{url}/api/customers/{id}");
+        }
 
         private async Task<CustomerDto?> FindOrCreateCustomer(string name, string phone)
-            => await CreateServiceClient()
-                .PostAsJsonAsync($"{GetUrl("CustomerService")}/api/customers/find-or-create",
-                    new { name, phone })
-                .Result.Content.ReadFromJsonAsync<CustomerDto>();
+        {
+            var client = await CreateServiceClient();
+            var url = await GetServiceUrl("CustomerService");
+            var response = await client.PostAsJsonAsync($"{url}/api/customers/find-or-create",
+                new { name, phone });
+            return await response.Content.ReadFromJsonAsync<CustomerDto>();
+        }
     }
 }
