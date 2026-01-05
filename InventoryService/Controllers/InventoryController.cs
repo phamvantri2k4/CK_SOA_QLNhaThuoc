@@ -25,9 +25,11 @@ namespace InventoryService.Controllers
             if (req.DrugId <= 0 || req.Quantity <= 0)
                 return BadRequest("Invalid DrugId or Quantity");
 
+            // Tìm item với CÙNG DrugId, ExpiryDate VÀ UnitType
             var item = await _db.InventoryItems.FirstOrDefaultAsync(x =>
                 x.DrugId == req.DrugId &&
-                x.ExpiryDate == req.ExpiryDate);
+                x.ExpiryDate == req.ExpiryDate &&
+                x.UnitType == req.UnitType);
 
             if (item == null)
             {
@@ -35,6 +37,7 @@ namespace InventoryService.Controllers
                 {
                     DrugId = req.DrugId,
                     Quantity = req.Quantity,
+                    UnitType = req.UnitType ?? "box", // Mặc định nhập theo hộp
                     ExpiryDate = req.ExpiryDate
                 };
                 _db.InventoryItems.Add(item);
@@ -48,12 +51,13 @@ namespace InventoryService.Controllers
             {
                 DrugId = req.DrugId,
                 Quantity = req.Quantity,
+                UnitType = req.UnitType ?? "box",
                 Type = "IMPORT",
                 CreatedAt = DateTime.UtcNow
             });
 
             await _db.SaveChangesAsync();
-            return Ok("Import success");
+            return Ok($"Import success: {req.Quantity} {req.UnitType ?? "box"}(s)");
         }
 
         /* ================= EXPORT ================= */

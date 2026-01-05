@@ -12,6 +12,7 @@ namespace SupplierService.Models
     {
         public int DrugId { get; set; }
         public int Quantity { get; set; }
+        public string UnitType { get; set; } = "box"; // "box" hoặc "pill"
         [Column(TypeName = "decimal(18,2)")]
         public decimal UnitPrice { get; set; }
         public DateTime? ExpiryDate { get; set; } // Nhận từ form, pass-through vào Inventory
@@ -38,6 +39,7 @@ namespace SupplierService.Models
         public int PurchaseOrderId { get; set; }
         public int DrugId { get; set; }
         public int Quantity { get; set; }
+        public string UnitType { get; set; } = "box"; // "box" hoặc "pill"
         [Column(TypeName = "decimal(18,2)")]
         public decimal UnitPrice { get; set; }
     }

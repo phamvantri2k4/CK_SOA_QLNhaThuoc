@@ -9,12 +9,14 @@ wwwroot\images\drugs\5d1d4689-aaf9-4a20-a6a1-b65592435a9b.jpg
 wwwroot\images\drugs\64248603-0d96-43b7-83bf-665b3dd1bab7.jpg
 wwwroot\images\drugs\6b4dc0d9-8531-45e9-ae9c-80d338385ac1.jpg
 wwwroot\images\drugs\6c9be469-d1d3-4877-b174-4c442c8c7966.png
+wwwroot\images\drugs\75fa31b9-46c1-4f78-bd80-38b2968f20d1.png
 wwwroot\images\drugs\7859d997-7811-43bf-a6df-5b0ad4113203.jpg
 wwwroot\images\drugs\856f038e-338c-48ad-97ce-f2704e8ccd14.jpg
 wwwroot\images\drugs\9a3249bf-d1d5-485b-9ac5-c47da6512b45.png
 wwwroot\images\drugs\b348c252-c916-4c68-ad93-b503b7326de3.jpg
 wwwroot\images\drugs\b59443d5-e7a3-4a06-820d-8f762828b0f0.png
 wwwroot\images\drugs\c6734ed3-1cd9-4f93-bee2-ad0a820cc4f7.jpg
+wwwroot\images\drugs\c7735942-22e5-46c6-83f6-e2ade49b53eb.jpg
 wwwroot\images\drugs\cd105985-6b19-4032-9527-722e61d0d196.jpg
 wwwroot\images\drugs\f87c3aa3-0be5-4498-942a-e6bc2cd26115.png
 wwwroot\images\drugs\fe776352-d4a0-450e-913e-a15978b44af0.jpg

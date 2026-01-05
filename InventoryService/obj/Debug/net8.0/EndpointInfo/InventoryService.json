@@ -116,6 +116,10 @@
           "quantity": {
             "type": "integer",
             "format": "int32"
+          },
+          "unitType": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -130,6 +134,10 @@
           "quantity": {
             "type": "integer",
             "format": "int32"
+          },
+          "unitType": {
+            "type": "string",
+            "nullable": true
           },
           "expiryDate": {
             "type": "string",

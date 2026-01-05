@@ -164,10 +164,11 @@
                 <div class="row">
                     @foreach (var drug in inventoryByDrug)
                     {
-                        var pack = drug.PackSize > 0 ? drug.PackSize : 1;
-                        var boxQty = drug.TotalQuantity / pack;
-                        var pillRemain = drug.TotalQuantity % pack;
-
+                        // Group items by UnitType to show separate counts
+                        var drugItems = Model.Where(x => x.DrugId == drug.DrugId).GroupBy(x => x.UnitType);
+                        var boxItems = drugItems.FirstOrDefault(x => x.Key == "box");
+                        var pillItems = drugItems.FirstOrDefault(x => x.Key == "pill");
+                        
                         <div class="col-md-6 col-lg-4">
                             <div class="drug-item">
                                 <div class="drug-name">
@@ -176,24 +177,24 @@
                                 
                                 <div class="mb-2">
                                     <div class="small text-muted">Tồn kho:</div>
-                                    @if (boxQty > 0)
+                                    
+                                    @if (boxItems != null && boxItems.Sum(x => x.Quantity) > 0)
                                     {
                                         <div class="quantity-text">
-                                            @boxQty hộp
-                                            @if (pillRemain > 0)
-                                            {
-                                                <span>+ @pillRemain viên</span>
-                                            }
+                                            @boxItems.Sum(x => x.Quantity) hộp
                                         </div>
-                                        <div class="text-muted small">= @drug.TotalQuantity viên (@pack viên/hộp)</div>
                                     }
-                                    else
+                                    
+                                    @if (pillItems != null && pillItems.Sum(x => x.Quantity) > 0)
                                     {
-                                        <div class="quantity-text">@drug.TotalQuantity viên</div>
-                                        @if (pack > 1)
-                                        {
-                                            <div class="text-muted small">(@pack viên/hộp)</div>
-                                        }
+                                        <div class="quantity-text">
+                                            @pillItems.Sum(x => x.Quantity) viên
+                                        </div>
+                                    }
+                                    
+                                    @if (drug.PackSize > 1)
+                                    {
+                                        <div class="text-muted small">(@drug.PackSize viên/hộp)</div>
                                     }
                                 </div>
 

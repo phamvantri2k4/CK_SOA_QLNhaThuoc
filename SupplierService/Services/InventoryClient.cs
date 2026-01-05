@@ -14,7 +14,7 @@ namespace SupplierService.Services
             _consulClient = new ConsulClient(c => c.Address = new Uri("http://localhost:8500"));
         }
 
-        public async Task<bool> ImportToInventory(int drugId, int quantity, DateTime? expiryDate = null)
+        public async Task<bool> ImportToInventory(int drugId, int quantity, DateTime? expiryDate = null, string unitType = "box")
         {
             var baseUrl = await GetServiceUrlAsync("InventoryService");
             var httpClient = _httpClientFactory.CreateClient();
@@ -23,6 +23,7 @@ namespace SupplierService.Services
             {
                 drugId = drugId,
                 quantity = quantity,
+                unitType = unitType, // Gửi thêm unitType
                 expiryDate = expiryDate
             };
 

@@ -6,6 +6,7 @@ namespace PharmaWebApp.Models
         public int DrugId { get; set; }
         public string? DrugName { get; set; }
         public int Quantity { get; set; }
+        public string UnitType { get; set; } = "box"; // "box" hoặc "pill"
         public DateTime? ExpiryDate { get; set; }
 
         public int PackSize { get; set; } = 1;

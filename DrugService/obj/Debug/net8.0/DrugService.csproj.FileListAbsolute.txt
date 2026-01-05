@@ -361,3 +361,4 @@ D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\DrugService\obj\De
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\DrugService\obj\Debug\net8.0\DrugService.pdb
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\DrugService\obj\Debug\net8.0\DrugService.genruntimeconfig.cache
 D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\DrugService\obj\Debug\net8.0\ref\DrugService.dll
+D:\Ky 1 Nam 4\Kiến trúc SOA\CK_SOA\QL_NhaThuoc\QL_NhaThuoc\DrugService\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

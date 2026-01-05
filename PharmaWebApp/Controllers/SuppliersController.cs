@@ -167,30 +167,14 @@ namespace PharmaWebApp.Controllers
 
             var (client, url) = await SupplierClientAsync();
 
-            // Build details với convert hộp sang viên nếu cần
-            var details = m.Details.Select(d =>
+            // Build details GỬI NGUYÊN BẢN, KHÔNG CONVERT
+            var details = m.Details.Select(d => new
             {
-                var drug = drugs.FirstOrDefault(dr => dr.Id == d.DrugId);
-                var packSize = drug?.PackSize ?? 1;
-                if (packSize <= 0) packSize = 1;
-
-                var quantityInPills = d.Quantity;
-                var unitPricePerPill = d.UnitPrice;
-
-                // Nếu nhập theo hộp, convert số lượng sang viên và chia giá theo viên
-                if (d.UnitType == "box")
-                {
-                    quantityInPills = d.Quantity * packSize;
-                    unitPricePerPill = d.UnitPrice / (decimal)packSize;
-                }
-
-                return new
-                {
-                    d.DrugId,
-                    Quantity = quantityInPills,  // Luôn lưu theo viên vào kho
-                    UnitPrice = unitPricePerPill, // Lưu giá theo viên để nhân ra tiền đúng
-                    d.ExpiryDate
-                };
+                d.DrugId,
+                d.Quantity,        // Gửi nguyên số lượng người dùng nhập
+                d.UnitType,        // Gửi kèm đơn vị (box/pill)
+                d.UnitPrice,       // Gửi nguyên giá người dùng nhập
+                d.ExpiryDate
             });
 
             await client.PostAsJsonAsync($"{url}/api/supplier/orders", new

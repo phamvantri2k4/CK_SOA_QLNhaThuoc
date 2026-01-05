@@ -125,13 +125,19 @@ namespace SupplierService.Controllers
                     PurchaseOrderId = order.Id,
                     DrugId = d.DrugId,
                     Quantity = d.Quantity,
+                    UnitType = d.UnitType, // ← LƯU UNITTYPE
                     UnitPrice = d.UnitPrice
                     // Không lưu ExpiryDate vì đây là thông tin của lô hàng, không phải đơn hàng
                 };
                 _context.PurchaseOrderDetails.Add(detail);
 
-                // Truyền ExpiryDate vào InventoryService (nếu có)
-                var ok = await _inventoryClient.ImportToInventory(d.DrugId, d.Quantity, d.ExpiryDate);
+                // Truyền UnitType vào InventoryService để lưu đúng đơn vị
+                var ok = await _inventoryClient.ImportToInventory(
+                    d.DrugId, 
+                    d.Quantity, 
+                    d.ExpiryDate, 
+                    d.UnitType); // ← THÊM UNITTYPE
+                
                 if (!ok)
                 {
                     return StatusCode(502, "Tạo đơn nhập thành công nhưng cập nhật kho thất bại");

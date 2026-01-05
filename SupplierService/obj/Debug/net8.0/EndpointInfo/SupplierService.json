@@ -245,6 +245,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "unitType": {
+            "type": "string",
+            "nullable": true
+          },
           "unitPrice": {
             "type": "number",
             "format": "double"

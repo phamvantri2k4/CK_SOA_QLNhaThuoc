@@ -42,6 +42,7 @@
                                 <tr>
                                     <th>Thuốc</th>
                                     <th class="text-center">Số lượng</th>
+                                    <th class="text-center">Đơn vị</th>
                                     <th class="text-end">Đơn giá</th>
                                     <th class="text-end">Thành tiền</th>
                                 </tr>
@@ -61,6 +62,16 @@
                                                 <div class="text-muted small">ID: @d.DrugId</div>
                                             </td>
                                             <td class="text-center"><strong>@d.Quantity</strong></td>
+                                            <td class="text-center">
+                                                @if (!string.IsNullOrEmpty(d.UnitType))
+                                                {
+                                                    <span class="badge bg-primary">@(d.UnitType == "box" ? "Hộp" : "Viên")</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Hộp</span>
+                                                }
+                                            </td>
                                             <td class="text-end">@(d.UnitPrice.ToString("N0")) ₫</td>
                                             <td class="text-end"><strong>@((d.UnitPrice * d.Quantity).ToString("N0")) ₫</strong></td>
                                         </tr>
@@ -69,7 +80,7 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="4" class="text-end"><strong>TỔNG CỘNG:</strong></td>
+                                    <td colspan="5" class="text-end"><strong>TỔNG CỘNG:</strong></td>
                                     <td class="text-end"><strong class="text-success">@(totalAmount.ToString("N0")) ₫</strong></td>
                                 </tr>
                             </tfoot>

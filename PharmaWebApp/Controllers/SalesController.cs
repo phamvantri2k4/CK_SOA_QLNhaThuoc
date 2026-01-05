@@ -102,9 +102,27 @@ namespace PharmaWebApp.Controllers
                         var inventoryItems = await client.GetFromJsonAsync<List<InventoryItemViewModel>>(
                             $"{inventoryUrl}/api/inventory/status") ?? new();
 
+                        // Convert hộp → viên trước khi tính tổng (vì bán theo viên)
                         stockByDrugId = inventoryItems
                             .GroupBy(i => i.DrugId)
-                            .ToDictionary(g => g.Key, g => g.Sum(x => x.Quantity));
+                            .ToDictionary(
+                                g => g.Key,
+                                g =>
+                                {
+                                    var drug = drugs.FirstOrDefault(d => d.Id == g.Key);
+                                    var packSize = drug?.PackSize ?? 1;
+                                    if (packSize <= 0) packSize = 1;
+
+                                    return g.Sum(item =>
+                                    {
+                                        // Nếu lưu theo hộp, convert sang viên
+                                        if (item.UnitType == "box")
+                                            return item.Quantity * packSize;
+                                        else
+                                            return item.Quantity;
+                                    });
+                                }
+                            );
                     }
                     catch (Exception ex)
                     {
