@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PharmaWebApp.Models;
-using PharmaWebApp.Services;
+using Shared.Services;
 using System.Diagnostics;
 
 namespace PharmaWebApp.Controllers

@@ -1,5 +1,4 @@
-using Consul;
-using PharmaWebApp.Services;
+using Shared.Services;
 
 namespace PharmaWebApp.Services
 {

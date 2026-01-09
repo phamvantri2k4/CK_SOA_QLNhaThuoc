@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SaleService.Data;
+using Shared.Services;
 using Consul;
 using System.Text;
 
@@ -41,6 +42,9 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 builder.Services.AddHttpClient();
+
+// Consul Service Discovery
+builder.Services.AddSingleton<ConsulServiceDiscovery>();
 
 var app = builder.Build();
 

@@ -23,7 +23,7 @@ namespace PharmaWebApp.Controllers
             var url = await _serviceUrl.GetDrugServiceUrlAsync();
             return (CreateAuthenticatedHttpClient(), url);
         }
-
+ 
         /* ================= DANH SÁCH ================= */
 
         public async Task<IActionResult> Index()

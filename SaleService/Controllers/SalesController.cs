@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SaleService.Data;
 using SaleService.Model;
 using Shared.Helpers;
+using Shared.Services;
 using System.Net.Http.Json;
 
 using Microsoft.Extensions.Caching.Memory;
@@ -18,17 +19,20 @@ namespace SaleService.Controllers
         private readonly IHttpClientFactory _factory;
         private readonly ILogger<SalesController> _logger;
         private readonly IMemoryCache _cache;
+        private readonly ConsulServiceDiscovery _consulDiscovery;
 
         public SalesController(
             SaleDbContext db,
             IHttpClientFactory factory,
             ILogger<SalesController> logger,
-            IMemoryCache cache)
+            IMemoryCache cache,
+            ConsulServiceDiscovery consulDiscovery)
         {
             _db = db;
             _factory = factory;
             _logger = logger;
             _cache = cache;
+            _consulDiscovery = consulDiscovery;
         }
 
         // ...
@@ -38,40 +42,7 @@ namespace SaleService.Controllers
             return await _cache.GetOrCreateAsync(serviceName, async entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5); // Cache 5 phút
-
-                var fallbackUrls = new Dictionary<string, string>
-                {
-                    ["AuthService"] = "http://localhost:5004",
-                    ["DrugService"] = "http://localhost:5001",
-                    ["CustomerService"] = "http://localhost:5003",
-                    ["InventoryService"] = "http://localhost:5006"
-                };
-
-                try
-                {
-                    using var consulClient = new Consul.ConsulClient(config =>
-                    {
-                        config.Address = new Uri("http://localhost:8500");
-                    });
-
-                    var services = await consulClient.Health.Service(serviceName, null, true);
-                    var service = services.Response?.FirstOrDefault();
-
-                    if (service != null)
-                    {
-                        var url = $"http://{service.Service.Address}:{service.Service.Port}";
-                        _logger.LogInformation($"Discovered {serviceName} at {url}");
-                        return url;
-                    }
-
-                    _logger.LogWarning($"Service {serviceName} not found in Consul. Using fallback.");
-                    return fallbackUrls.GetValueOrDefault(serviceName, "");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"Consul error for {serviceName}: {ex.Message}");
-                    return fallbackUrls.GetValueOrDefault(serviceName, "");
-                }
+                return await _consulDiscovery.GetServiceUrlAsync(serviceName);
             }) ?? "";
         }
 
@@ -200,15 +171,15 @@ namespace SaleService.Controllers
             foreach (var d in invoice.Details)
             {
                 var qty = d.Quantity;
-                if (d.UnitType == "box")
-                {
-                    var drug = await GetDrug(d.DrugId);
-                    qty *= drug?.PackSize ?? 1;
-                }
+                var unitType = d.UnitType;
+
+                // Nếu bán BOX → export BOX từ kho
+                // Nếu bán PILL → export PILL từ kho
+                // KHÔNG convert box → pill nữa!
 
                 var resp = await client.PostAsJsonAsync(
                     $"{inventoryUrl}/api/inventory/export",
-                    new { drugId = d.DrugId, quantity = qty });
+                    new { drugId = d.DrugId, quantity = qty, unitType = unitType });
 
                 if (!resp.IsSuccessStatusCode)
                     return BadRequest("Not enough stock");

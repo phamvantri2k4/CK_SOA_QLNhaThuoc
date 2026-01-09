@@ -69,8 +69,11 @@ namespace InventoryService.Controllers
             if (req.DrugId <= 0 || req.Quantity <= 0)
                 return BadRequest("Invalid DrugId or Quantity");
 
+            // Lọc theo CÙNG UnitType (pill hoặc box)
             var items = await _db.InventoryItems
-                .Where(x => x.DrugId == req.DrugId && x.Quantity > 0)
+                .Where(x => x.DrugId == req.DrugId 
+                         && x.UnitType == req.UnitType  // ← Thêm filter UnitType
+                         && x.Quantity > 0)
                 .OrderBy(x => x.ExpiryDate)
                 .ToListAsync();
 
@@ -92,6 +95,7 @@ namespace InventoryService.Controllers
             {
                 DrugId = req.DrugId,
                 Quantity = -req.Quantity,
+                UnitType = req.UnitType,  // ← Lưu đúng UnitType
                 Type = "EXPORT",
                 CreatedAt = DateTime.UtcNow
             });

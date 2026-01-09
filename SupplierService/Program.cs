@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SupplierService.Data;
 using SupplierService.Services;
+using Shared.Services;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 
@@ -13,6 +14,9 @@ builder.Services.AddDbContext<SupplierDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddHttpClient();
+
+// Consul Service Discovery
+builder.Services.AddSingleton<ConsulServiceDiscovery>();
 
 // Client gọi InventoryService
 builder.Services.AddScoped<InventoryClient>();
